@@ -1,4 +1,3 @@
-
 /**
  * Kiswahili translations for the application
  * 
@@ -89,5 +88,21 @@ export const sw = {
   delete: "Futa",
   
   // Language
-  switchLanguage: "EN"
+  switchLanguage: "EN",
+  
+  // Authentication
+  login: "Ingia",
+  register: "Jisajili",
+  email: "Barua pepe",
+  password: "Nywila",
+  username: "Jina la mtumiaji",
+  loginWith: "Ingia kwa:",
+  confirmPassword: "Thibitisha Nywila",
+  name: "Jina",
+  signIn: "Ingia",
+  signUp: "Jisajili",
+  forgotPassword: "Umesahau Nywila?",
+  dontHaveAccount: "Huna akaunti?",
+  alreadyHaveAccount: "Una akaunti tayari?",
+  logOut: "Toka"
 };

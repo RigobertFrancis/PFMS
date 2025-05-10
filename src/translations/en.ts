@@ -1,4 +1,3 @@
-
 /**
  * English translations for the application
  * 
@@ -89,5 +88,21 @@ export const en = {
   delete: "Delete",
   
   // Language
-  switchLanguage: "SW"
+  switchLanguage: "SW",
+  
+  // Authentication
+  login: "Login",
+  register: "Register",
+  email: "Email",
+  password: "Password",
+  username: "Username",
+  loginWith: "Login with:",
+  confirmPassword: "Confirm Password",
+  name: "Name",
+  signIn: "Sign In",
+  signUp: "Sign Up",
+  forgotPassword: "Forgot Password?",
+  dontHaveAccount: "Don't have an account?",
+  alreadyHaveAccount: "Already have an account?",
+  logOut: "Log Out"
 };
