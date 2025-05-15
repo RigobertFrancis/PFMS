@@ -65,7 +65,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Route>
 
-          {/* Redirect root path to auth/login */}
+          {/* Redirect empty and root paths to auth/login */}
+          <Route path="" element={<Navigate to="/auth/login" replace />} />
           <Route path="/" element={<Navigate to="/auth/login" replace />} />
 
           {/* Redirect login/register paths to auth routes */}
