@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from './ui/select';
 import { departments } from '@/lib/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDepartmentTranslationKey } from '@/lib/departmentTranslations';
 
 interface DepartmentSelectorProps {
   value: string;
@@ -17,6 +19,8 @@ interface DepartmentSelectorProps {
 }
 
 const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ value, onValueChange }) => {
+  const { t } = useLanguage();
+  
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="w-full">
@@ -24,10 +28,10 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ value, onValueC
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Departments</SelectLabel>
+          <SelectLabel>{t('departmentsTitle')}</SelectLabel>
           {departments.map((department) => (
             <SelectItem key={department.id} value={department.id}>
-              {department.name}
+              {t(getDepartmentTranslationKey(department.id))}
             </SelectItem>
           ))}
         </SelectGroup>

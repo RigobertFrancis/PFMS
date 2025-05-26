@@ -4,24 +4,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { notifications } from '@/lib/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const NotificationsPage: React.FC = () => {
+  const { t } = useLanguage();
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Notifications</h1>
+        <h1 className="text-2xl font-bold">{t('notifications')}</h1>
         <div className="flex gap-2">
-          <Button variant="outline">Mark All Read</Button>
-          <Button variant="outline">Clear All</Button>
+          <Button variant="outline">{t('markAllRead')}</Button>
+          <Button variant="outline">{t('clearAll')}</Button>
         </div>
       </div>
       
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">
-            Recent Notifications <Badge variant="outline">{unreadCount} Unread</Badge>
+            {t('recentNotifications')} <Badge variant="outline">{unreadCount} {t('unread')}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>

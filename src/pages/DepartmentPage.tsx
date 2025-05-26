@@ -36,6 +36,8 @@ import DashboardCard from '@/components/DashboardCard';
 import StatNumber from '@/components/StatNumber';
 import FeedbackTypeChart from '@/components/FeedbackTypeChart';
 import { departments, feedbacks, chartData } from '@/lib/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDepartmentTranslationKey } from '@/lib/departmentTranslations';
 
 const DepartmentPage: React.FC = () => {
   const { departmentId } = useParams<{ departmentId: string }>();
@@ -43,6 +45,7 @@ const DepartmentPage: React.FC = () => {
   const [tab, setTab] = useState<string>('overview');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+  const { t } = useLanguage();
 
   const department = departments.find(d => d.id === departmentId);
   
@@ -74,50 +77,50 @@ const DepartmentPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{department.name} Department</h1>
+        <h1 className="text-2xl font-bold">{t(getDepartmentTranslationKey(department.id))} {t('departments')}</h1>
         <Button>Add New Feedback</Button>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="feedbacks">Feedbacks</TabsTrigger>
-          <TabsTrigger value="feedbackForm">Feedback Form</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
+          <TabsTrigger value="feedbacks">{t('feedbacks')}</TabsTrigger>
+          <TabsTrigger value="feedbackForm">{t('feedbackForm')}</TabsTrigger>
+          <TabsTrigger value="analytics">{t('analyticsTab')}</TabsTrigger>
+          <TabsTrigger value="settings">{t('settings')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <DashboardCard title="Total Feedback">
+            <DashboardCard title={t('totalFeedback')}>
               <StatNumber 
                 value={department.totalFeedback.toLocaleString()} 
                 valueClassName="text-med-blue" 
-                label="Total feedback received"
+                label={t('totalFeedbacks')}
               />
             </DashboardCard>
             
-            <DashboardCard title="Feedback Distribution">
+            <DashboardCard title={t('feedbackCategories')}>
               <div className="flex justify-between space-x-4">
                 <div className="flex flex-col items-center">
                   <div className="w-3 h-3 bg-feedback-complaint rounded-full mb-1"></div>
                   <span className="text-xl font-bold">{department.feedbackByType.complaints}</span>
-                  <span className="text-xs text-gray-500">Complaints</span>
+                  <span className="text-xs text-gray-500">{t('complaints')}</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-3 h-3 bg-feedback-suggestion rounded-full mb-1"></div>
                   <span className="text-xl font-bold">{department.feedbackByType.suggestions}</span>
-                  <span className="text-xs text-gray-500">Suggestions</span>
+                  <span className="text-xs text-gray-500">{t('suggestions')}</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-3 h-3 bg-feedback-compliment rounded-full mb-1"></div>
                   <span className="text-xl font-bold">{department.feedbackByType.compliments}</span>
-                  <span className="text-xs text-gray-500">Compliments</span>
+                  <span className="text-xs text-gray-500">{t('compliments')}</span>
                 </div>
               </div>
             </DashboardCard>
             
-            <DashboardCard title="Response Rate">
+            <DashboardCard title={t('responseRate')}>
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-bold text-green-600">92%</span>
                 <span className="text-sm text-gray-500">Average response time: 6 hours</span>
@@ -136,19 +139,19 @@ const DepartmentPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input type="search" placeholder="Search feedbacks..." className="pl-8" />
+                  <Input type="search" placeholder={t('searchFeedbacks')} className="pl-8" />
                 </div>
                 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
                     <SelectTrigger className="w-full sm:w-[140px]">
-                      <SelectValue placeholder="Status" />
+                      <SelectValue placeholder={t('status')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="new">New</SelectItem>
                       <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="resolved">{t('resolved')}</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>
@@ -159,9 +162,9 @@ const DepartmentPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="complaint">Complaints</SelectItem>
-                      <SelectItem value="suggestion">Suggestions</SelectItem>
-                      <SelectItem value="compliment">Compliments</SelectItem>
+                      <SelectItem value="complaint">{t('complaints')}</SelectItem>
+                      <SelectItem value="suggestion">{t('suggestions')}</SelectItem>
+                      <SelectItem value="compliment">{t('compliments')}</SelectItem>
                     </SelectContent>
                   </Select>
                   
@@ -186,11 +189,11 @@ const DepartmentPage: React.FC = () => {
                       <TableHead>Title</TableHead>
                       <TableHead>
                         <div className="flex items-center gap-1">
-                          Status
+                          {t('status')}
                           <ArrowDown className="h-3 w-3" />
                         </div>
                       </TableHead>
-                      <TableHead>Priority</TableHead>
+                      <TableHead>{t('priority')}</TableHead>
                       <TableHead>
                         <div className="flex items-center gap-1">
                           Date
@@ -211,12 +214,14 @@ const DepartmentPage: React.FC = () => {
                               'bg-feedback-compliment text-white'
                             }
                           >
-                            {feedback.type}
+                            {feedback.type === 'complaint' ? t('complaints') : 
+                             feedback.type === 'suggestion' ? t('suggestions') : 
+                             t('compliments')}
                           </Badge>
                         </TableCell>
                         <TableCell>{feedback.title}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{feedback.status}</Badge>
+                          <Badge variant="outline">{feedback.status === 'resolved' ? t('resolved') : feedback.status}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge 

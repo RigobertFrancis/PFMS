@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,10 +15,12 @@ import {
 } from "@/components/ui/table";
 import { Search, Filter, Save } from 'lucide-react';
 import { feedbacks } from '@/lib/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const ResponsesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("pending");
   const [selectedFeedback, setSelectedFeedback] = useState<string | null>(null);
+  const { t } = useLanguage();
   
   const pendingFeedbacks = feedbacks.filter(
     f => f.status === "new" || f.status === "in-progress"
@@ -37,26 +38,26 @@ const ResponsesPage: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Responses</h1>
+      <h1 className="text-2xl font-bold">{t('responses')}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-0">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">Feedbacks</CardTitle>
+              <CardTitle className="text-lg">{t('feedbacks')}</CardTitle>
               <div className="text-sm text-gray-500">{currentFeedbacks.length} total</div>
             </div>
           </CardHeader>
           <CardContent className="pt-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="resolved">Resolved</TabsTrigger>
+                <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
+                <TabsTrigger value="resolved">{t('resolved')}</TabsTrigger>
               </TabsList>
               
               <div className="relative mb-4">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input type="search" placeholder="Search feedbacks..." className="pl-8" />
+                <Input type="search" placeholder={t('searchFeedbacks')} className="pl-8" />
               </div>
               
               <div className="space-y-2 max-h-[500px] overflow-auto">
@@ -79,11 +80,13 @@ const ResponsesPage: React.FC = () => {
                           'bg-feedback-compliment text-white'
                         }
                       >
-                        {feedback.type}
+                        {feedback.type === 'complaint' ? t('complaints') : 
+                         feedback.type === 'suggestion' ? t('suggestions') : 
+                         t('compliments')}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                      <Badge variant="outline">{feedback.status}</Badge>
+                      <Badge variant="outline">{feedback.status === 'resolved' ? t('resolved') : feedback.status}</Badge>
                       <span className="text-xs text-gray-500">
                         {new Date(feedback.createdAt).toLocaleDateString()}
                       </span>
@@ -108,7 +111,9 @@ const ResponsesPage: React.FC = () => {
                       'bg-feedback-compliment text-white'
                     }
                   >
-                    {selected.type}
+                    {selected.type === 'complaint' ? t('complaints') : 
+                     selected.type === 'suggestion' ? t('suggestions') : 
+                     t('compliments')}
                   </Badge>
                 </div>
                 <div className="flex gap-2 text-sm text-gray-500">
@@ -119,13 +124,13 @@ const ResponsesPage: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-md border">
-                  <h3 className="font-medium mb-2">Feedback Details</h3>
+                  <h3 className="font-medium mb-2">{t('feedbackDetails')}</h3>
                   <p className="text-gray-700">{selected.description}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-medium mb-2">Status</h3>
+                    <h3 className="font-medium mb-2">{t('status')}</h3>
                     <div className="flex gap-2">
                       {["new", "in-progress", "resolved", "closed"].map((status) => (
                         <Badge 
@@ -133,14 +138,14 @@ const ResponsesPage: React.FC = () => {
                           variant={selected.status === status ? "default" : "outline"}
                           className={selected.status === status ? "bg-med-blue" : ""}
                         >
-                          {status}
+                          {status === 'resolved' ? t('resolved') : status}
                         </Badge>
                       ))}
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-2">Priority</h3>
+                    <h3 className="font-medium mb-2">{t('priority')}</h3>
                     <div className="flex gap-2">
                       {["low", "medium", "high", "urgent"].map((priority) => (
                         <Badge 
@@ -166,25 +171,25 @@ const ResponsesPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h3 className="font-medium mb-2">Response</h3>
+                  <h3 className="font-medium mb-2">{t('response')}</h3>
                   <Textarea
-                    placeholder="Type your response here..."
+                    placeholder={t('typeResponse')}
                     className="min-h-[120px]"
                   />
                 </div>
                 
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline">Mark as Resolved</Button>
+                  <Button variant="outline">{t('markAsResolved')}</Button>
                   <Button className="flex gap-2">
                     <Save size={16} />
-                    <span>Save Response</span>
+                    <span>{t('saveResponse')}</span>
                   </Button>
                 </div>
               </CardContent>
             </>
           ) : (
             <div className="flex items-center justify-center h-[400px] text-gray-500">
-              Select a feedback to view and respond
+              {t('selectFeedback')}
             </div>
           )}
         </Card>

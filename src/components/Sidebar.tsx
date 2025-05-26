@@ -13,8 +13,7 @@ import {
   FileText, 
   MessageCircle, 
   Bell,
-  ChevronLeft,
-  Users
+  ChevronLeft
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -69,7 +68,6 @@ const Sidebar: React.FC = () => {
       <nav className="flex flex-col flex-grow">
         <NavItem to="/" icon={<Home size={18} />} label={t('home')} />
         <NavItem to="/departments" icon={<BarChart2 size={18} />} label={t('departments')} />
-        <NavItem to="/visitors" icon={<Users size={18} />} label={t('visitors')} />
         <NavItem to="/analytics" icon={<BarChart2 size={18} />} label={t('analytics')} />
         <NavItem to="/reporting" icon={<FileText size={18} />} label={t('reporting')} />
         <NavItem to="/responses" icon={<MessageCircle size={18} />} label={t('responses')} />

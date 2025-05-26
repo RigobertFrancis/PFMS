@@ -1,4 +1,3 @@
-
 /**
  * Login Page Component
  * 
@@ -28,6 +27,7 @@ import {
 } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Form validation schema for username login
 const usernameLoginSchema = z.object({
@@ -55,6 +55,7 @@ const LoginPage = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
   const [loginMethod, setLoginMethod] = useState<'username' | 'email'>('username');
   
   // Initialize form
@@ -87,15 +88,24 @@ const LoginPage = () => {
     try {
       console.log('Login attempt with:', data);
       
-      // TODO: Replace with actual authentication logic
-      // This is just a mock success for demonstration
-      toast({
-        title: "Success!",
-        description: "You've successfully logged in.",
-      });
+      const email = data.loginMethod === 'email' ? data.email : `${data.username}@example.com`;
+      const success = await login(email, data.password);
       
-      // Redirect to dashboard after successful login
-      navigate("/");
+      if (success) {
+        toast({
+          title: "Success!",
+          description: "You've successfully logged in.",
+        });
+        
+        // Redirect to dashboard after successful login
+        navigate("/");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Please check your credentials and try again.",
+        });
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -186,9 +196,9 @@ const LoginPage = () => {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || isLoading}>
               <LogIn className="mr-2 h-4 w-4" />
-              Login
+              {isLoading ? 'Signing in...' : 'Login'}
             </Button>
           </form>
         </Form>

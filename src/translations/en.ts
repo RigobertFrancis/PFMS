@@ -104,5 +104,17 @@ export const en = {
   forgotPassword: "Forgot Password?",
   dontHaveAccount: "Don't have an account?",
   alreadyHaveAccount: "Already have an account?",
-  logOut: "Log Out"
+  logOut: "Log Out",
+  
+  // Department Names
+  departmentEmergency: "Emergency",
+  departmentOutpatientClinic: "Outpatient Clinic",
+  departmentInpatientWard: "Inpatient Ward",
+  departmentRadiology: "Radiology",
+  departmentLaboratory: "Laboratory",
+  departmentPharmacy: "Pharmacy",
+  departmentBilling: "Billing",
+  departmentMortuary: "Mortuary",
+  departmentMaternity: "Maternity",
+  departmentImmunization: "Immunization",
 };

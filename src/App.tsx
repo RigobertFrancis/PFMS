@@ -13,6 +13,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./components/Layout";
 import AuthLayout from "./components/AuthLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import DepartmentsPage from "./pages/DepartmentsPage";
@@ -22,7 +24,6 @@ import ResponsesPage from "./pages/ResponsesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import DepartmentPage from "./pages/DepartmentPage";
 import FeedbackFormPage from "./pages/FeedbackFormPage";
-import VisitorsPage from "./pages/VisitorsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
@@ -37,43 +38,45 @@ const queryClient = new QueryClient();
  * - TooltipProvider for tooltips
  * - Toasters for notifications
  * - BrowserRouter for routing
+ * - AuthProvider for authentication
  */
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="auth" element={<AuthLayout />}>
-            <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<RegisterPage />} />
-          </Route>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="auth" element={<AuthLayout />}>
+              <Route path="login" element={<LoginPage />} />
+              <Route path="register" element={<RegisterPage />} />
+            </Route>
 
-          {/* Main App Routes */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="departments" element={<DepartmentsPage />} />
-            <Route path="departments/:departmentId" element={<DepartmentPage />} />
-            <Route path="departments/:departmentId/feedback-form" element={<FeedbackFormPage />} />
-            <Route path="visitors" element={<VisitorsPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="reporting" element={<ReportingPage />} />
-            <Route path="responses" element={<ResponsesPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
+            {/* Protected Main App Routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="departments" element={<DepartmentsPage />} />
+              <Route path="departments/:departmentId" element={<DepartmentPage />} />
+              <Route path="departments/:departmentId/feedback-form" element={<FeedbackFormPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="reporting" element={<ReportingPage />} />
+              <Route path="responses" element={<ResponsesPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
 
-          {/* Redirect empty and root paths to auth/login */}
-          <Route path="" element={<Navigate to="/auth/login" replace />} />
-          <Route path="/" element={<Navigate to="/auth/login" replace />} />
-
-          {/* Redirect login/register paths to auth routes */}
-          <Route path="login" element={<Navigate to="/auth/login" replace />} />
-          <Route path="register" element={<Navigate to="/auth/register" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Redirect login/register paths to auth routes */}
+            <Route path="login" element={<Navigate to="/auth/login" replace />} />
+            <Route path="register" element={<Navigate to="/auth/register" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -8,8 +8,10 @@ import FeedbackTypeChart from '@/components/FeedbackTypeChart';
 import ProgressBar from '@/components/ProgressBar';
 import GaugeChart from '@/components/GaugeChart';
 import { departments, feedbackSummary, chartData } from '@/lib/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Dashboard: React.FC = () => {
+  const { t } = useLanguage();
   const [selectedDepartment, setSelectedDepartment] = useState('emergency');
   const currentDepartment = departments.find(d => d.id === selectedDepartment) || departments[0];
   
@@ -17,10 +19,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="text-2xl font-bold">{t('dashboard')}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <DashboardCard title="Total Feedback">
+        <DashboardCard title={t('totalFeedback')}>
           <div className="flex flex-col items-center">
             <StatNumber 
               value={feedbackSummary.total.toLocaleString()} 
@@ -30,7 +32,7 @@ const Dashboard: React.FC = () => {
           </div>
         </DashboardCard>
         
-        <DashboardCard title="Department">
+        <DashboardCard title={t('departmentsTitle')}>
           <div className="flex flex-col space-y-4">
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
               <SelectTrigger>
@@ -53,7 +55,7 @@ const Dashboard: React.FC = () => {
           </div>
         </DashboardCard>
         
-        <DashboardCard title="Requires Attention">
+        <DashboardCard title={t('requiresAttention')}>
           <div className="flex flex-col items-center">
             <StatNumber 
               value={feedbackSummary.requiresAttention} 
@@ -63,16 +65,16 @@ const Dashboard: React.FC = () => {
           </div>
         </DashboardCard>
         
-        <DashboardCard title="Response">
+        <DashboardCard title={t('response')}>
           <div className="flex flex-col space-y-2">
             <div className="flex justify-between items-center p-2 bg-gray-100 rounded">
               <span className="font-medium">2</span>
-              <span className="text-sm text-gray-600">Response</span>
+              <span className="text-sm text-gray-600">{t('response')}</span>
             </div>
             
             <div className="flex justify-between items-center p-2 bg-gray-100 rounded">
               <span className="font-medium">7+</span>
-              <span className="text-sm text-gray-600">Notifications</span>
+              <span className="text-sm text-gray-600">{t('notifications')}</span>
             </div>
             
             <div className="flex justify-center mt-2">
@@ -88,28 +90,28 @@ const Dashboard: React.FC = () => {
             <div className="flex gap-4">
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-feedback-suggestion rounded-full mr-2"></div>
-                <span className="text-sm">Suggestions</span>
+                <span className="text-sm">{t('suggestions')}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-feedback-complaint rounded-full mr-2"></div>
-                <span className="text-sm">Complaints</span>
+                <span className="text-sm">{t('complaints')}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-feedback-compliment rounded-full mr-2"></div>
-                <span className="text-sm">Compliments</span>
+                <span className="text-sm">{t('compliments')}</span>
               </div>
             </div>
           </div>
           <FeedbackTypeChart data={chartData} height={280} />
         </DashboardCard>
         
-        <DashboardCard title="Feedback Categories">
+        <DashboardCard title={t('feedbackCategories')}>
           <div className="space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between">
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-red-400 rounded-full mr-2"></div>
-                  <span className="font-medium">Complaints</span>
+                  <span className="font-medium">{t('complaints')}</span>
                 </div>
                 <span className="font-medium">{feedbackSummary.byType.complaints.toLocaleString()}</span>
               </div>
@@ -119,14 +121,14 @@ const Dashboard: React.FC = () => {
                 color="bg-feedback-complaint" 
                 percentage={31}
               />
-              <div className="text-xs text-gray-500">31% of total</div>
+              <div className="text-xs text-gray-500">31% {t('ofTotal')}</div>
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between">
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-blue-400 rounded-full mr-2"></div>
-                  <span className="font-medium">Suggestions</span>
+                  <span className="font-medium">{t('suggestions')}</span>
                 </div>
                 <span className="font-medium">{feedbackSummary.byType.suggestions.toLocaleString()}</span>
               </div>
@@ -136,14 +138,14 @@ const Dashboard: React.FC = () => {
                 color="bg-feedback-suggestion" 
                 percentage={45}
               />
-              <div className="text-xs text-gray-500">45% of total</div>
+              <div className="text-xs text-gray-500">45% {t('ofTotal')}</div>
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between">
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-green-400 rounded-full mr-2"></div>
-                  <span className="font-medium">Compliments</span>
+                  <span className="font-medium">{t('compliments')}</span>
                 </div>
                 <span className="font-medium">{feedbackSummary.byType.compliments.toLocaleString()}</span>
               </div>
@@ -153,7 +155,7 @@ const Dashboard: React.FC = () => {
                 color="bg-feedback-compliment" 
                 percentage={24}
               />
-              <div className="text-xs text-gray-500">24% of total</div>
+              <div className="text-xs text-gray-500">24% {t('ofTotal')}</div>
             </div>
           </div>
         </DashboardCard>

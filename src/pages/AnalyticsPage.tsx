@@ -28,6 +28,7 @@ import DepartmentSelector from '@/components/DepartmentSelector';
 import { departments, feedbackSummary } from '@/lib/mockData';
 import { toast } from '@/components/ui/use-toast';
 import { DateRange } from 'react-day-picker';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const pieData = [
   { name: 'Complaints', value: 2187, color: '#ff6b6b' },
@@ -65,6 +66,7 @@ const categoryOptions = [
 ];
 
 const AnalyticsPage: React.FC = () => {
+  const { t } = useLanguage();
   const [timeframe, setTimeframe] = useState('monthly');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -151,10 +153,10 @@ const AnalyticsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Analytics</h1>
+      <h1 className="text-2xl font-bold">{t('analytics')}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <DashboardCard title="Total Feedbacks">
+        <DashboardCard title={t('totalFeedback')}>
           <div className="text-4xl font-bold text-med-blue">{feedbackSummary.total.toLocaleString()}</div>
           <div className="text-sm text-gray-500">All time</div>
         </DashboardCard>
@@ -172,12 +174,12 @@ const AnalyticsPage: React.FC = () => {
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Analytics Dashboard</CardTitle>
+          <CardTitle>{t('analytics')} Dashboard</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
-              <label className="text-sm font-medium">Department</label>
+              <label className="text-sm font-medium">{t('departmentsTitle')}</label>
               <DepartmentSelector 
                 value={selectedDepartment} 
                 onValueChange={setSelectedDepartment} 
@@ -191,11 +193,10 @@ const AnalyticsPage: React.FC = () => {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoryOptions.map(category => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="complaints">{t('complaints')}</SelectItem>
+                  <SelectItem value="suggestions">{t('suggestions')}</SelectItem>
+                  <SelectItem value="compliments">{t('compliments')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -244,14 +245,24 @@ const AnalyticsPage: React.FC = () => {
                   <SelectValue placeholder="Select chart type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {chartTypes.map(chart => (
-                    <SelectItem key={chart.id} value={chart.id} className="flex items-center gap-2">
-                      <div className="flex items-center gap-2">
-                        <chart.icon className="h-4 w-4" />
-                        {chart.name}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="pie" className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <ChartPie className="h-4 w-4" />
+                      Pie Chart
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="bar" className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <ChartBar className="h-4 w-4" />
+                      Bar Chart
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="line" className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <ChartLine className="h-4 w-4" />
+                      Line Chart
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

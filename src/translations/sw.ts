@@ -104,5 +104,17 @@ export const sw = {
   forgotPassword: "Umesahau Nywila?",
   dontHaveAccount: "Huna akaunti?",
   alreadyHaveAccount: "Una akaunti tayari?",
-  logOut: "Toka"
+  logOut: "Toka",
+
+  // Department Names
+  departmentEmergency: "Dharura",
+  departmentOutpatientClinic: "Kliniki ya Wagonjwa wa Nje",
+  departmentInpatientWard: "Wodi ya Wagonjwa wa Ndani",
+  departmentRadiology: "Idara ya Miale",
+  departmentLaboratory: "Maabara",
+  departmentPharmacy: "Famasi",
+  departmentBilling: "Idara ya Malipo",
+  departmentMortuary: "Chumba cha Maiti",
+  departmentMaternity: "Idara ya Uzazi",
+  departmentImmunization: "Idara ya Chanjo",
 };

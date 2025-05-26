@@ -5,7 +5,7 @@
  * The top navigation bar that includes the app logo, search box,
  * language switcher, help button, and user profile.
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, HelpCircle, User, LogOut } from 'lucide-react';
 import { Input } from './ui/input';
@@ -20,6 +20,7 @@ import {
 } from './ui/dropdown-menu';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from './ui/use-toast';
 
 const Header: React.FC = () => {
@@ -27,14 +28,11 @@ const Header: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // Mock authentication state (replace with actual auth logic)
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Default to true for demonstration
+  const { user, logout, isAuthenticated } = useAuth();
   
   // Handle logout
   const handleLogout = () => {
-    // Mock logout for demonstration
-    setIsLoggedIn(false);
+    logout();
     
     // Show success message
     toast({
@@ -84,17 +82,19 @@ const Header: React.FC = () => {
         </Button>
         
         {/* User profile or login/register */}
-        {isLoggedIn ? (
+        {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="border-2 border-white cursor-pointer">
-                <AvatarFallback className="bg-gray-800 text-white">AD</AvatarFallback>
+                <AvatarFallback className="bg-gray-800 text-white">
+                  {user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
+                <span>{user.name}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
