@@ -18,6 +18,7 @@ export interface Department {
   id: string;
   name: string;
   description?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
   totalFeedback: number;
   feedbackByType: {
     complaints: number;
@@ -80,4 +81,13 @@ export interface ChartData {
   complaints: number;
   suggestions: number;
   compliments: number;
+}
+
+export interface ReportTemplate {
+  id: string;
+  name: string;
+  description: string;
+  type: 'feedback-summary' | 'department-performance' | 'response-times' | 'satisfaction-scores' | 'trending-issues';
+  template: string;
+  createdAt: string;
 }

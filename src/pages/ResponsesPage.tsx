@@ -1,198 +1,296 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Search, Filter, Save } from 'lucide-react';
-import { feedbacks } from '@/lib/mockData';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { ArrowRight, Clock, CheckCircle, AlertCircle, MessageSquare, Send } from 'lucide-react';
+import { feedbacks, departments } from '@/lib/mockData';
+import { Feedback } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 const ResponsesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("pending");
-  const [selectedFeedback, setSelectedFeedback] = useState<string | null>(null);
-  const { t } = useLanguage();
-  
-  const pendingFeedbacks = feedbacks.filter(
-    f => f.status === "new" || f.status === "in-progress"
-  );
-  
-  const resolvedFeedbacks = feedbacks.filter(
-    f => f.status === "resolved" || f.status === "closed"
-  );
-  
-  const currentFeedbacks = activeTab === "pending" ? pendingFeedbacks : resolvedFeedbacks;
-  
-  const selected = selectedFeedback 
-    ? feedbacks.find(f => f.id === selectedFeedback) 
-    : null;
-  
+  const { toast } = useToast();
+  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [response, setResponse] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'new':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'in-progress':
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'resolved':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'closed':
+        return <CheckCircle className="h-4 w-4 text-gray-500" />;
+      default:
+        return <MessageSquare className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'new':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'resolved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'closed':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'complaint':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'suggestion':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'compliment':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getDepartmentName = (departmentId: string) => {
+    const dept = departments.find(d => d.id === departmentId);
+    return dept ? dept.name : 'Unknown Department';
+  };
+
+  const getAvailableStatuses = (feedback: Feedback) => {
+    if (feedback.type === 'compliment') {
+      return ['new', 'closed'];
+    }
+    return ['new', 'in-progress', 'resolved', 'closed'];
+  };
+
+  const filteredFeedbacks = feedbacks.filter(feedback => {
+    const statusMatch = statusFilter === 'all' || feedback.status === statusFilter;
+    const typeMatch = typeFilter === 'all' || feedback.type === typeFilter;
+    return statusMatch && typeMatch;
+  });
+
+  const handleForwardToDepartment = (feedback: Feedback) => {
+    toast({
+      title: "Feedback Forwarded",
+      description: `Feedback has been forwarded to ${getDepartmentName(feedback.departmentId)} department. Status changed to In Progress.`,
+    });
+    
+    // In a real app, this would update the feedback status in the backend
+    console.log(`Forwarding feedback ${feedback.id} to department ${feedback.departmentId}`);
+  };
+
+  const handleStatusChange = (feedback: Feedback, newStatus: string) => {
+    toast({
+      title: "Status Updated",
+      description: `Feedback status changed to ${newStatus}.`,
+    });
+    
+    console.log(`Updating feedback ${feedback.id} status to ${newStatus}`);
+  };
+
+  const handleSendResponse = () => {
+    if (!selectedFeedback || !response.trim()) {
+      toast({
+        title: "Error",
+        description: "Please select feedback and enter a response.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Response Sent",
+      description: "Your response has been sent successfully.",
+    });
+
+    setResponse('');
+    setSelectedFeedback(null);
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t('responses')}</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-0">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">{t('feedbacks')}</CardTitle>
-              <div className="text-sm text-gray-500">{currentFeedbacks.length} total</div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
-                <TabsTrigger value="resolved">{t('resolved')}</TabsTrigger>
-              </TabsList>
-              
-              <div className="relative mb-4">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input type="search" placeholder={t('searchFeedbacks')} className="pl-8" />
-              </div>
-              
-              <div className="space-y-2 max-h-[500px] overflow-auto">
-                {currentFeedbacks.slice(0, 10).map((feedback) => (
-                  <div
-                    key={feedback.id}
-                    className={`p-3 border rounded-md cursor-pointer ${
-                      selectedFeedback === feedback.id
-                        ? "border-med-blue bg-med-blue/10"
-                        : "hover:bg-gray-50"
-                    }`}
-                    onClick={() => setSelectedFeedback(feedback.id)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium text-sm">{feedback.title}</h3>
-                      <Badge 
-                        className={
-                          feedback.type === 'complaint' ? 'bg-feedback-complaint text-white' : 
-                          feedback.type === 'suggestion' ? 'bg-feedback-suggestion text-white' : 
-                          'bg-feedback-compliment text-white'
-                        }
-                      >
-                        {feedback.type === 'complaint' ? t('complaints') : 
-                         feedback.type === 'suggestion' ? t('suggestions') : 
-                         t('compliments')}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Feedback Responses</h1>
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="new">New</SelectItem>
+            <SelectItem value="in-progress">In Progress</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="complaint">Complaints</SelectItem>
+            <SelectItem value="suggestion">Suggestions</SelectItem>
+            <SelectItem value="compliment">Compliments</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Feedback List ({filteredFeedbacks.length})</h2>
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            {filteredFeedbacks.map((feedback) => (
+              <Card 
+                key={feedback.id} 
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedFeedback?.id === feedback.id ? 'ring-2 ring-blue-500' : ''}`}
+                onClick={() => setSelectedFeedback(feedback)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className={getTypeColor(feedback.type)}>
+                        {feedback.type.toUpperCase()}
+                      </Badge>
+                      <Badge className={getStatusColor(feedback.status)}>
+                        {getStatusIcon(feedback.status)}
+                        {feedback.status.toUpperCase()}
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <Badge variant="outline">{feedback.status === 'resolved' ? t('resolved') : feedback.status}</Badge>
-                      <span className="text-xs text-gray-500">
-                        {new Date(feedback.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(feedback.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
-        
-        <Card className="md:col-span-2">
-          {selected ? (
-            <>
+                  
+                  <h3 className="font-medium mb-1">{feedback.title}</h3>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{feedback.description}</p>
+                  
+                  <div className="flex justify-between items-center text-xs text-gray-500">
+                    <span>Department: {getDepartmentName(feedback.departmentId)}</span>
+                    <span>Patient: {feedback.patientId}</span>
+                  </div>
+
+                  {feedback.status === 'new' && (
+                    <div className="mt-3 flex gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleForwardToDepartment(feedback);
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <ArrowRight className="h-3 w-3" />
+                        Forward to Department
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Response Details</h2>
+          {selectedFeedback ? (
+            <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>{selected.title}</CardTitle>
-                  <Badge 
-                    className={
-                      selected.type === 'complaint' ? 'bg-feedback-complaint text-white' : 
-                      selected.type === 'suggestion' ? 'bg-feedback-suggestion text-white' : 
-                      'bg-feedback-compliment text-white'
-                    }
-                  >
-                    {selected.type === 'complaint' ? t('complaints') : 
-                     selected.type === 'suggestion' ? t('suggestions') : 
-                     t('compliments')}
-                  </Badge>
-                </div>
-                <div className="flex gap-2 text-sm text-gray-500">
-                  <span>Patient ID: {selected.patientId}</span>
-                  <span>•</span>
-                  <span>Created: {new Date(selected.createdAt).toLocaleDateString()}</span>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{selectedFeedback.title}</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge className={getTypeColor(selectedFeedback.type)}>
+                      {selectedFeedback.type.toUpperCase()}
+                    </Badge>
+                    <Badge className={getStatusColor(selectedFeedback.status)}>
+                      {getStatusIcon(selectedFeedback.status)}
+                      {selectedFeedback.status.toUpperCase()}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-md border">
-                  <h3 className="font-medium mb-2">{t('feedbackDetails')}</h3>
-                  <p className="text-gray-700">{selected.description}</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium mb-2">{t('status')}</h3>
-                    <div className="flex gap-2">
-                      {["new", "in-progress", "resolved", "closed"].map((status) => (
-                        <Badge 
-                          key={status} 
-                          variant={selected.status === status ? "default" : "outline"}
-                          className={selected.status === status ? "bg-med-blue" : ""}
-                        >
-                          {status === 'resolved' ? t('resolved') : status}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-2">{t('priority')}</h3>
-                    <div className="flex gap-2">
-                      {["low", "medium", "high", "urgent"].map((priority) => (
-                        <Badge 
-                          key={priority} 
-                          variant="outline"
-                          className={
-                            selected.priority === priority
-                              ? selected.priority === 'urgent'
-                                ? 'border-red-500 text-red-500 bg-red-50'
-                                : selected.priority === 'high'
-                                ? 'border-orange-500 text-orange-500 bg-orange-50'
-                                : selected.priority === 'medium'
-                                ? 'border-yellow-500 text-yellow-500 bg-yellow-50'
-                                : 'border-green-500 text-green-500 bg-green-50'
-                              : ''
-                          }
-                        >
-                          {priority}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
                 <div>
-                  <h3 className="font-medium mb-2">{t('response')}</h3>
+                  <h4 className="font-medium mb-2">Feedback Details</h4>
+                  <p className="text-sm text-gray-700">{selectedFeedback.description}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Department:</span>
+                    <p>{getDepartmentName(selectedFeedback.departmentId)}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Patient ID:</span>
+                    <p>{selectedFeedback.patientId}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Priority:</span>
+                    <p className="capitalize">{selectedFeedback.priority}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Created:</span>
+                    <p>{new Date(selectedFeedback.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Update Status</label>
+                  <Select 
+                    value={selectedFeedback.status} 
+                    onValueChange={(newStatus) => handleStatusChange(selectedFeedback, newStatus)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableStatuses(selectedFeedback).map(status => (
+                        <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Response</label>
                   <Textarea
-                    placeholder={t('typeResponse')}
-                    className="min-h-[120px]"
+                    value={response}
+                    onChange={(e) => setResponse(e.target.value)}
+                    placeholder="Type your response here..."
+                    rows={4}
                   />
                 </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline">{t('markAsResolved')}</Button>
-                  <Button className="flex gap-2">
-                    <Save size={16} />
-                    <span>{t('saveResponse')}</span>
-                  </Button>
-                </div>
+
+                <Button onClick={handleSendResponse} className="w-full flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  Send Response
+                </Button>
               </CardContent>
-            </>
+            </Card>
           ) : (
-            <div className="flex items-center justify-center h-[400px] text-gray-500">
-              {t('selectFeedback')}
-            </div>
+            <Card>
+              <CardContent className="p-8 text-center text-gray-500">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Select a feedback to view details and respond</p>
+              </CardContent>
+            </Card>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );

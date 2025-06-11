@@ -1,3 +1,4 @@
+
 import { Feedback, Department, Notification, FeedbackSummary, ChartData, Question, VisitorFeedback, Visitor } from './types';
 
 // Sample questions for departments
@@ -28,6 +29,7 @@ export const departments: Department[] = [
     id: 'emergency',
     name: 'Emergency',
     description: 'Emergency department for critical care',
+    priority: 'critical',
     totalFeedback: 1318,
     feedbackByType: {
       complaints: 422,
@@ -56,6 +58,7 @@ export const departments: Department[] = [
     id: 'outpatient-clinic',
     name: 'Outpatient Clinic',
     description: 'General outpatient services',
+    priority: 'high',
     totalFeedback: 1102,
     feedbackByType: {
       complaints: 312,
@@ -77,103 +80,111 @@ export const departments: Department[] = [
     id: 'inpatient-ward',
     name: 'Inpatient Ward',
     description: 'Inpatient care services',
+    priority: 'high',
     totalFeedback: 876,
     feedbackByType: {
       complaints: 254,
       suggestions: 398,
       compliments: 224,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'radiology',
     name: 'Radiology',
     description: 'Diagnostic imaging services',
+    priority: 'medium',
     totalFeedback: 643,
     feedbackByType: {
       complaints: 187,
       suggestions: 295,
       compliments: 161,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'laboratory',
     name: 'Laboratory',
     description: 'Clinical laboratory services',
+    priority: 'medium',
     totalFeedback: 732,
     feedbackByType: {
       complaints: 213,
       suggestions: 336,
       compliments: 183,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'pharmacy',
     name: 'Pharmacy',
     description: 'Medication dispensing services',
+    priority: 'medium',
     totalFeedback: 589,
     feedbackByType: {
       complaints: 171,
       suggestions: 271,
       compliments: 147,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'billing',
     name: 'Billing',
     description: 'Payment and insurance services',
+    priority: 'low',
     totalFeedback: 954,
     feedbackByType: {
       complaints: 312,
       suggestions: 412,
       compliments: 230,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'mortuary',
     name: 'Mortuary',
     description: 'Mortuary services',
+    priority: 'medium',
     totalFeedback: 143,
     feedbackByType: {
       complaints: 32,
       suggestions: 75,
       compliments: 36,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'maternity',
     name: 'Maternity',
     description: 'Maternal and newborn care services',
+    priority: 'high',
     totalFeedback: 456,
     feedbackByType: {
       complaints: 132,
       suggestions: 209,
       compliments: 115,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
   {
     id: 'immunization',
     name: 'Immunization',
     description: 'Vaccination services',
+    priority: 'medium',
     totalFeedback: 243,
     feedbackByType: {
       complaints: 52,
       suggestions: 142,
       compliments: 49,
     },
-    questions: []
+    questions: [...commonQuestions]
   },
 ];
 
 // Add questions to the remaining departments
 departments.forEach((dept, index) => {
-  if (!dept.questions) {
+  if (!dept.questions || dept.questions.length === 0) {
     dept.questions = [...commonQuestions];
     
     // Add department-specific questions
