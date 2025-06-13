@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +13,21 @@ import { useToast } from '@/hooks/use-toast';
 
 const ResponsesPage: React.FC = () => {
   const { toast } = useToast();
+  const location = useLocation();
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [response, setResponse] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+
+  // Check if we have a specific feedback ID from navigation state
+  useEffect(() => {
+    if (location.state?.selectedFeedbackId) {
+      const feedback = feedbacks.find(f => f.id === location.state.selectedFeedbackId);
+      if (feedback) {
+        setSelectedFeedback(feedback);
+      }
+    }
+  }, [location.state]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -65,13 +77,6 @@ const ResponsesPage: React.FC = () => {
     return dept ? dept.name : 'Unknown Department';
   };
 
-  const getAvailableStatuses = (feedback: Feedback) => {
-    if (feedback.type === 'compliment') {
-      return ['new', 'closed'];
-    }
-    return ['new', 'in-progress', 'resolved', 'closed'];
-  };
-
   const filteredFeedbacks = feedbacks.filter(feedback => {
     const statusMatch = statusFilter === 'all' || feedback.status === statusFilter;
     const typeMatch = typeFilter === 'all' || feedback.type === typeFilter;
@@ -84,17 +89,12 @@ const ResponsesPage: React.FC = () => {
       description: `Feedback has been forwarded to ${getDepartmentName(feedback.departmentId)} department. Status changed to In Progress.`,
     });
     
-    // In a real app, this would update the feedback status in the backend
-    console.log(`Forwarding feedback ${feedback.id} to department ${feedback.departmentId}`);
-  };
-
-  const handleStatusChange = (feedback: Feedback, newStatus: string) => {
-    toast({
-      title: "Status Updated",
-      description: `Feedback status changed to ${newStatus}.`,
-    });
+    // Update the selected feedback to reflect the status change
+    if (selectedFeedback?.id === feedback.id) {
+      setSelectedFeedback({ ...selectedFeedback, status: 'in-progress' });
+    }
     
-    console.log(`Updating feedback ${feedback.id} status to ${newStatus}`);
+    console.log(`Forwarding feedback ${feedback.id} to department ${feedback.departmentId}`);
   };
 
   const handleSendResponse = () => {
@@ -182,22 +182,6 @@ const ResponsesPage: React.FC = () => {
                     <span>Department: {getDepartmentName(feedback.departmentId)}</span>
                     <span>Patient: {feedback.patientId}</span>
                   </div>
-
-                  {feedback.status === 'new' && (
-                    <div className="mt-3 flex gap-2">
-                      <Button 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleForwardToDepartment(feedback);
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <ArrowRight className="h-3 w-3" />
-                        Forward to Department
-                      </Button>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             ))}
@@ -248,25 +232,6 @@ const ResponsesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Update Status</label>
-                  <Select 
-                    value={selectedFeedback.status} 
-                    onValueChange={(newStatus) => handleStatusChange(selectedFeedback, newStatus)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableStatuses(selectedFeedback).map(status => (
-                        <SelectItem key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium mb-2">Response</label>
                   <Textarea
                     value={response}
@@ -276,10 +241,23 @@ const ResponsesPage: React.FC = () => {
                   />
                 </div>
 
-                <Button onClick={handleSendResponse} className="w-full flex items-center gap-2">
-                  <Send className="h-4 w-4" />
-                  Send Response
-                </Button>
+                <div className="space-y-2">
+                  {selectedFeedback.status === 'new' && (
+                    <Button 
+                      onClick={() => handleForwardToDepartment(selectedFeedback)}
+                      className="w-full flex items-center gap-2"
+                      variant="outline"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Forward to Department
+                    </Button>
+                  )}
+
+                  <Button onClick={handleSendResponse} className="w-full flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Send Response
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
