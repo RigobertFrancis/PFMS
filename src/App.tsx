@@ -23,6 +23,7 @@ import ReportingPage from "./pages/ReportingPage";
 import ResponsesPage from "./pages/ResponsesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import DepartmentPage from "./pages/DepartmentPage";
+import DepartmentQuestionsPage from "./pages/DepartmentQuestionsPage";
 import FeedbackFormPage from "./pages/FeedbackFormPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -63,7 +64,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="departments" element={<DepartmentsPage />} />
               <Route path="departments/:departmentId" element={<DepartmentPage />} />
-              <Route path="departments/:departmentId/feedback-form" element={<FeedbackFormPage />} />
+              <Route path="departmentQuestions/:departmentId" element={<DepartmentQuestionsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="reporting" element={<ReportingPage />} />
               <Route path="responses" element={<ResponsesPage />} />

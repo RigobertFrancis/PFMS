@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Card, 
@@ -35,9 +35,41 @@ import {
 import DashboardCard from '@/components/DashboardCard';
 import StatNumber from '@/components/StatNumber';
 import FeedbackTypeChart from '@/components/FeedbackTypeChart';
-import { departments, feedbacks, chartData } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDepartmentTranslationKey } from '@/lib/departmentTranslations';
+import axios from 'axios';
+
+interface Department {
+  id: number;
+  name: string;
+  description: string;
+  totalFeedback: number;
+  feedbackByType: {
+    complaints: number;
+    suggestions: number;
+    compliments: number;
+  };
+  responseRate: number;
+  averageResponseTime: number;
+  questions?: Question[];
+}
+
+interface Question {
+  id: number;
+  questionText: string;
+  questionType: string;
+  required: boolean;
+  options?: string[];
+}
+
+interface Feedback {
+  id: string;
+  category: string;
+  question: string;
+  questionAnswer: string;
+  createdAt: string;
+  departmentId: number;
+}
 
 const DepartmentPage: React.FC = () => {
   const { departmentId } = useParams<{ departmentId: string }>();
@@ -46,14 +78,101 @@ const DepartmentPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const { t } = useLanguage();
-
-  const department = departments.find(d => d.id === departmentId);
   
-  if (!department) {
+  const [department, setDepartment] = useState<Department | null>(null);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [chartData, setChartData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchValue, setSearchValue] = useState('');
+
+  const BASE_URL = "http://localhost:8089/api";
+
+  useEffect(() => {
+    if (departmentId) {
+      loadDepartmentData();
+      loadFeedbacks();
+      loadChartData();
+    }
+  }, [departmentId]);
+
+  const loadDepartmentData = async () => {
+    if (!departmentId) return;
+    
+    try {
+      const [
+        departmentResponse,
+        totalFeedbackResponse,
+        complaintFeedbackResponse,
+        complimentFeedbackResponse,
+        suggestionFeedbackResponse,
+        questionsResponse
+      ] = await Promise.all([
+        axios.get(`${BASE_URL}/departments/department/${departmentId}`),
+        axios.get(`${BASE_URL}/feedbacks/department/total?departmentId=${departmentId}`),
+        axios.get(`${BASE_URL}/feedbacks/department/complaints/total?departmentId=${departmentId}`),
+        axios.get(`${BASE_URL}/feedbacks/department/compliments/total?departmentId=${departmentId}`),
+        axios.get(`${BASE_URL}/feedbacks/department/suggestion/total?departmentId=${departmentId}`),
+        axios.get(`${BASE_URL}/questions/department?departmentId=${departmentId}`)
+      ]);
+
+      const totalFeedback = Number(totalFeedbackResponse.data);
+      const totalDepartmentFeedback = Number(departmentResponse.data.totalFeedback) || 0;
+      const responseRate = totalDepartmentFeedback > 0 
+        ? ((totalDepartmentFeedback / totalFeedback) * 100).toFixed(1) 
+        : '0';
+
+      setDepartment({
+        ...departmentResponse.data,
+        totalFeedback: totalFeedbackResponse.data,
+        feedbackByType: {
+          complaints: complaintFeedbackResponse.data,
+          compliments: complimentFeedbackResponse.data,
+          suggestions: suggestionFeedbackResponse.data
+        },
+        responseRate: parseFloat(responseRate),
+        averageResponseTime: totalFeedback > 0 ? (totalDepartmentFeedback / totalFeedback) : 0,
+        questions: questionsResponse.data
+      });
+    } catch (err) {
+      console.error('Error loading department data:', err);
+      setError('Failed to load department data');
+    }
+  };
+
+  const loadFeedbacks = async () => {
+    if (!departmentId) return;
+    
+    try {
+      const response = await axios.get(`${BASE_URL}/feedbacks/all`);
+      setFeedbacks(response.data.filter((f: Feedback) => f.departmentId.toString() === departmentId));
+    } catch (err) {
+      console.error('Error loading feedbacks:', err);
+      setError('Failed to load feedbacks');
+    }
+  };
+
+  const loadChartData = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/feedbacks/chart-data`);
+      setChartData(response.data);
+    } catch (err) {
+      console.error('Error loading chart data:', err);
+      setError('Failed to load chart data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error || !department) {
     return (
       <div className="flex flex-col items-center justify-center p-10">
-        <h1 className="text-2xl font-bold mb-4">Department Not Found</h1>
-        <p className="mb-4">The department you are looking for does not exist.</p>
+        <h1 className="text-2xl font-bold mb-4">Error</h1>
+        <p className="mb-4">{error || 'Department not found'}</p>
         <Button asChild>
           <Link to="/">Return to Dashboard</Link>
         </Button>
@@ -61,13 +180,20 @@ const DepartmentPage: React.FC = () => {
     );
   }
 
-  const departmentFeedbacks = feedbacks.filter(f => f.departmentId === departmentId);
-
-  // Apply filters
-  const filteredFeedbacks = departmentFeedbacks.filter(feedback => {
-    if (filterStatus !== 'all' && feedback.status !== filterStatus) return false;
-    if (filterType !== 'all' && feedback.type !== filterType) return false;
-    return true;
+  // Apply search and type filter
+  const filteredFeedbacks = feedbacks.filter(feedback => {
+    // Type/category filter (normalize to lowercase for robust matching)
+    if (filterType !== 'all' && feedback.category && feedback.category.toLowerCase() !== filterType) return false;
+    if (!searchValue) return true;
+    const dateObj = new Date(feedback.createdAt);
+    const dateStr = isNaN(dateObj.getTime()) ? '-' : dateObj.toISOString().slice(0, 10);
+    const search = searchValue.toLowerCase();
+    return (
+      feedback.id.toString().toLowerCase().includes(search) ||
+      (feedback.question && feedback.question.toLowerCase().includes(search)) ||
+      (feedback.questionAnswer && feedback.questionAnswer.toLowerCase().includes(search)) ||
+      dateStr.includes(search)
+    );
   });
 
   const handleEditFeedbackForm = () => {
@@ -77,9 +203,8 @@ const DepartmentPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t(getDepartmentTranslationKey(department.id))} {t('departments')}</h1>
-        <Button>Add New Feedback</Button>
-      </div>
+        <h1 className="text-2xl font-bold">{department.name} Department</h1><br/>
+        </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="mb-4">
@@ -87,7 +212,6 @@ const DepartmentPage: React.FC = () => {
           <TabsTrigger value="feedbacks">{t('feedbacks')}</TabsTrigger>
           <TabsTrigger value="feedbackForm">{t('feedbackForm')}</TabsTrigger>
           <TabsTrigger value="analytics">{t('analyticsTab')}</TabsTrigger>
-          <TabsTrigger value="settings">{t('settings')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -122,8 +246,8 @@ const DepartmentPage: React.FC = () => {
             
             <DashboardCard title={t('responseRate')}>
               <div className="flex flex-col items-center">
-                <span className="text-3xl font-bold text-green-600">92%</span>
-                <span className="text-sm text-gray-500">Average response time: 6 hours</span>
+                <span className="text-3xl font-bold text-green-600">{department.responseRate}%</span>
+                <span className="text-sm text-gray-500">{t('response')}: {department.averageResponseTime.toFixed(1)} hours</span>
               </div>
             </DashboardCard>
           </div>
@@ -135,42 +259,30 @@ const DepartmentPage: React.FC = () => {
         
         <TabsContent value="feedbacks">
           <Card>
-            <CardHeader className="pb-0">
+            <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input type="search" placeholder={t('searchFeedbacks')} className="pl-8" />
+                  <Input
+                    type="search"
+                    placeholder={t('searchFeedbacks')}
+                    className="pl-8"
+                    value={searchValue}
+                    onChange={e => setSearchValue(e.target.value)}
+                  />
                 </div>
-                
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-full sm:w-[140px]">
-                      <SelectValue placeholder={t('status')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">{t('resolved')}</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
                   <Select value={filterType} onValueChange={setFilterType}>
                     <SelectTrigger className="w-full sm:w-[140px]">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="complaint">{t('complaints')}</SelectItem>
-                      <SelectItem value="suggestion">{t('suggestions')}</SelectItem>
-                      <SelectItem value="compliment">{t('compliments')}</SelectItem>
+                      <SelectItem value="complaint">Complaint</SelectItem>
+                      <SelectItem value="suggestion">Suggestion</SelectItem>
+                      <SelectItem value="compliment">Compliment</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -178,71 +290,39 @@ const DepartmentPage: React.FC = () => {
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">ID</TableHead>
-                      <TableHead>
-                        <div className="flex items-center gap-1">
-                          Type
-                          <ArrowUp className="h-3 w-3" />
-                        </div>
-                      </TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>
-                        <div className="flex items-center gap-1">
-                          {t('status')}
-                          <ArrowDown className="h-3 w-3" />
-                        </div>
-                      </TableHead>
-                      <TableHead>{t('priority')}</TableHead>
-                      <TableHead>
-                        <div className="flex items-center gap-1">
-                          Date
-                          <ArrowDown className="h-3 w-3" />
-                        </div>
-                      </TableHead>
+                    <TableRow className="bg-gray-100">
+                      <TableHead className="w-[100px] font-bold text-gray-700 uppercase">ID</TableHead>
+                      <TableHead className="font-bold text-gray-700 uppercase">Type</TableHead>
+                      <TableHead className="font-bold text-gray-700 uppercase">Question</TableHead>
+                      <TableHead className="font-bold text-gray-700 uppercase">Answer</TableHead>
+                      <TableHead className="font-bold text-gray-700 uppercase">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredFeedbacks.slice(0, 10).map((feedback) => (
                       <TableRow key={feedback.id}>
-                        <TableCell className="font-medium">{feedback.id.split('-')[1]}</TableCell>
+                        <TableCell className="font-medium">{feedback.id}</TableCell>
                         <TableCell>
-                          <Badge 
-                            className={
-                              feedback.type === 'complaint' ? 'bg-feedback-complaint text-white' : 
-                              feedback.type === 'suggestion' ? 'bg-feedback-suggestion text-white' : 
-                              'bg-feedback-compliment text-white'
-                            }
-                          >
-                            {feedback.type === 'complaint' ? t('complaints') : 
-                             feedback.type === 'suggestion' ? t('suggestions') : 
-                             t('compliments')}
-                          </Badge>
+                          <span className={
+                            feedback.category === 'complaint' ? 'bg-feedback-complaint text-white px-2 py-1 rounded-full text-xs font-semibold' :
+                            feedback.category === 'suggestion' ? 'bg-feedback-suggestion text-white px-2 py-1 rounded-full text-xs font-semibold' :
+                            feedback.category === 'compliment' ? 'bg-feedback-compliment text-white px-2 py-1 rounded-full text-xs font-semibold' :
+                            'bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold'
+                          }>
+                            {feedback.category.charAt(0).toUpperCase() + feedback.category.slice(1)}
+                          </span>
                         </TableCell>
-                        <TableCell>{feedback.title}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{feedback.status === 'resolved' ? t('resolved') : feedback.status}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={
-                              feedback.priority === 'urgent' ? 'border-red-500 text-red-500' : 
-                              feedback.priority === 'high' ? 'border-orange-500 text-orange-500' : 
-                              feedback.priority === 'medium' ? 'border-yellow-500 text-yellow-500' : 
-                              'border-green-500 text-green-500'
-                            }
-                          >
-                            {feedback.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(feedback.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>{feedback.question}</TableCell>
+                        <TableCell>{feedback.questionAnswer}</TableCell>
+                        <TableCell>{(() => {
+                          const date = new Date(feedback.createdAt);
+                          return isNaN(date.getTime()) ? '-' : date.toISOString().slice(0, 10);
+                        })()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
-              
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-gray-500">
                   Showing <span className="font-medium">1</span> to <span className="font-medium">10</span> of{" "}
@@ -265,7 +345,7 @@ const DepartmentPage: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Feedback Form Questions</CardTitle>
-              <Button onClick={handleEditFeedbackForm} className="flex items-center gap-2">
+              <Button onClick={() => navigate(`/departmentQuestions/${departmentId}`)} className="flex items-center gap-2">
                 <Edit size={16} />
                 Edit Questions
               </Button>
@@ -276,26 +356,24 @@ const DepartmentPage: React.FC = () => {
                   <p className="text-muted-foreground mb-4">
                     These questions will be displayed to patients when they submit feedback for this department.
                   </p>
-                  
                   <div className="border rounded-md p-4 space-y-4">
                     {department.questions.map((question, index) => (
-                      <div key={question.id} className="pb-4 border-b last:border-b-0 last:pb-0">
+                      <div key={question.id || index} className="pb-4 border-b last:border-b-0 last:pb-0">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium">{index + 1}. {question.text}</p>
+                            <p className="font-medium">{index + 1}. {question.questionText}</p>
                             <div className="flex gap-2 mt-1">
-                              <Badge variant="outline">{question.type}</Badge>
+                              <Badge variant="outline">{question.questionType}</Badge>
                               {question.required && <Badge>Required</Badge>}
                             </div>
                           </div>
                         </div>
-                        
                         {question.options && question.options.length > 0 && (
                           <div className="mt-2 pl-4">
                             <p className="text-sm text-gray-500 mb-1">Options:</p>
                             <ul className="list-disc pl-5 text-sm">
                               {question.options.map((option, i) => (
-                                <li key={i}>{option}</li>
+                                <li key={option + '-' + i}>{option}</li>
                               ))}
                             </ul>
                           </div>
@@ -309,7 +387,7 @@ const DepartmentPage: React.FC = () => {
                   <p className="text-muted-foreground mb-4">
                     No custom questions have been created for this department yet.
                   </p>
-                  <Button onClick={handleEditFeedbackForm}>Create Questions</Button>
+                  <Button onClick={() => navigate(`/departmentQuestions/${departmentId}`)}>Create Questions</Button>
                 </div>
               )}
             </CardContent>
@@ -325,20 +403,6 @@ const DepartmentPage: React.FC = () => {
               <p className="text-muted-foreground">
                 Detailed analytics for the {department.name} department will be shown here.
                 This includes feedback trends, response times, and performance metrics.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Department Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Configure settings specific to the {department.name} department.
-                This includes notification preferences, response templates, and team management.
               </p>
             </CardContent>
           </Card>

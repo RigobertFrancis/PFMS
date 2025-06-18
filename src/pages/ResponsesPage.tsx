@@ -8,13 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Clock, CheckCircle, AlertCircle, MessageSquare, Send } from 'lucide-react';
 import { feedbacks, departments } from '@/lib/mockData';
-import { Feedback } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 const ResponsesPage: React.FC = () => {
   const { toast } = useToast();
   const location = useLocation();
-  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [response, setResponse] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -83,7 +82,7 @@ const ResponsesPage: React.FC = () => {
     return statusMatch && typeMatch;
   });
 
-  const handleForwardToDepartment = (feedback: Feedback) => {
+  const handleForwardToDepartment = (feedback) => {
     toast({
       title: "Feedback Forwarded",
       description: `Feedback has been forwarded to ${getDepartmentName(feedback.departmentId)} department. Status changed to In Progress.`,

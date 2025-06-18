@@ -191,8 +191,8 @@ departments.forEach((dept, index) => {
     if (dept.id === 'pharmacy') {
       dept.questions.push({
         id: `${dept.id}-q1`,
-        text: 'How long did you wait to receive your medication?',
-        type: 'select',
+        questionText: 'How long did you wait to receive your medication?',
+        ype: 'select',
         required: false,
         options: ['Less than 10 minutes', '10-20 minutes', '20-30 minutes', 'More than 30 minutes']
       });
