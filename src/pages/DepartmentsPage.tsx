@@ -59,6 +59,7 @@ const DepartmentsPage: React.FC = () => {
   const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const {id} = useParams()
   const [newDepartment, setNewDepartment] = useState({
     name: '',
@@ -80,6 +81,7 @@ const DepartmentsPage: React.FC = () => {
   }, []);
 
   const loadDepartments = async () => {
+    setLoading(true);
     try {
       const result = await axios.get(`${DEPARTMENT_URL}/all`);
       console.log('API Response:', result.data);
@@ -132,7 +134,9 @@ const DepartmentsPage: React.FC = () => {
                 compliments: 0
               }
             };
-          }
+          } finally {
+            setLoading(false);
+          } 
         })
       );
       console.log('Processed departments data:', departments);
@@ -385,6 +389,16 @@ const DepartmentsPage: React.FC = () => {
     { value: 'DROPDOWN', label: 'Dropdown Select' },
     { value: 'RADIO', label: 'Radio Buttons' }
   ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading...</h2>
+          <p className="text-gray-500">Please wait while loading departments!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

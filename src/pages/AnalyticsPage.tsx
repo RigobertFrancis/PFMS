@@ -169,6 +169,50 @@ const AnalyticsPage: React.FC = () => {
         <h1 className="text-2xl font-bold">{t('analytics')}</h1>
       </div>
 
+     
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{filteredSummary.total.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Filtered results</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t('complaints')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{filteredSummary.byType.complaints}</div>
+            <p className="text-xs text-muted-foreground">Filtered results</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t('suggestions')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{filteredSummary.byType.suggestions}</div>
+            <p className="text-xs text-muted-foreground">Filtered results</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t('compliments')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{filteredSummary.byType.compliments}</div>
+            <p className="text-xs text-muted-foreground">Filtered results</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex flex-wrap gap-4 mb-6">
         <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
           <SelectTrigger className="w-48">
@@ -220,48 +264,6 @@ const AnalyticsPage: React.FC = () => {
             Pie
           </Button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredSummary.total.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Filtered results</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('complaints')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{filteredSummary.byType.complaints}</div>
-            <p className="text-xs text-muted-foreground">Filtered results</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('suggestions')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{filteredSummary.byType.suggestions}</div>
-            <p className="text-xs text-muted-foreground">Filtered results</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('compliments')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{filteredSummary.byType.compliments}</div>
-            <p className="text-xs text-muted-foreground">Filtered results</p>
-          </CardContent>
-        </Card>
       </div>
 
       <Card>

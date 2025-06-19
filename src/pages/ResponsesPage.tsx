@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,26 +6,75 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Clock, CheckCircle, AlertCircle, MessageSquare, Send } from 'lucide-react';
-import { feedbacks, departments } from '@/lib/mockData';
 import { useToast } from '@/hooks/use-toast';
+import axios from 'axios';
+
+interface Feedback {
+  id: string;
+  category: string;
+  message: string;
+  priority: string;
+  status: string;
+  patientId: number;
+  createdAt: string;
+  modifiedAt: string;
+  reply: string;
+  departmentId: number;
+}
+
+interface Department {
+  id: number;
+  name: string;
+}
 
 const ResponsesPage: React.FC = () => {
   const { toast } = useToast();
   const location = useLocation();
-  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [response, setResponse] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const BASE_URL = "http://localhost:8089/api";
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Check if we have a specific feedback ID from navigation state
   useEffect(() => {
-    if (location.state?.selectedFeedbackId) {
+    if (location.state?.selectedFeedbackId && feedbacks.length > 0) {
       const feedback = feedbacks.find(f => f.id === location.state.selectedFeedbackId);
       if (feedback) {
         setSelectedFeedback(feedback);
       }
     }
-  }, [location.state]);
+  }, [location.state, feedbacks]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [responsesRes, departmentsRes] = await Promise.all([
+        axios.get(`${BASE_URL}/responses/all`),
+        axios.get(`${BASE_URL}/departments/all`)
+      ]);
+      
+      setFeedbacks(responsesRes.data);
+      setDepartments(departmentsRes.data);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load feedback data.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -58,8 +106,8 @@ const ResponsesPage: React.FC = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
+  const getTypeColor = (category: string) => {
+    switch (category.toLowerCase()) {
       case 'complaint':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'suggestion':
@@ -71,18 +119,18 @@ const ResponsesPage: React.FC = () => {
     }
   };
 
-  const getDepartmentName = (departmentId: string) => {
+  const getDepartmentName = (departmentId: number) => {
     const dept = departments.find(d => d.id === departmentId);
     return dept ? dept.name : 'Unknown Department';
   };
 
   const filteredFeedbacks = feedbacks.filter(feedback => {
     const statusMatch = statusFilter === 'all' || feedback.status === statusFilter;
-    const typeMatch = typeFilter === 'all' || feedback.type === typeFilter;
+    const typeMatch = typeFilter === 'all' || feedback.category.toLowerCase() === typeFilter;
     return statusMatch && typeMatch;
   });
 
-  const handleForwardToDepartment = (feedback) => {
+  const handleForwardToDepartment = (feedback: Feedback) => {
     toast({
       title: "Feedback Forwarded",
       description: `Feedback has been forwarded to ${getDepartmentName(feedback.departmentId)} department. Status changed to In Progress.`,
@@ -115,6 +163,17 @@ const ResponsesPage: React.FC = () => {
     setSelectedFeedback(null);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading...</h2>
+          <p className="text-gray-500">Please wait while loading responses!</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -128,10 +187,10 @@ const ResponsesPage: React.FC = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="in-progress">In Progress</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="NEW">New</SelectItem>
+            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+            <SelectItem value="RESOLVED">Resolved</SelectItem>
+            <SelectItem value="CLOSED">Closed</SelectItem>
           </SelectContent>
         </Select>
 
@@ -141,9 +200,9 @@ const ResponsesPage: React.FC = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="complaint">Complaints</SelectItem>
-            <SelectItem value="suggestion">Suggestions</SelectItem>
-            <SelectItem value="compliment">Compliments</SelectItem>
+            <SelectItem value="COMPLAINT">Complaints</SelectItem>
+            <SelectItem value="SUGGESTION">Suggestions</SelectItem>
+            <SelectItem value="COMPLIMENT">Compliments</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -161,8 +220,8 @@ const ResponsesPage: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <Badge className={getTypeColor(feedback.type)}>
-                        {feedback.type.toUpperCase()}
+                      <Badge className={getTypeColor(feedback.category)}>
+                        {feedback.category.toUpperCase()}
                       </Badge>
                       <Badge className={getStatusColor(feedback.status)}>
                         {getStatusIcon(feedback.status)}
@@ -174,8 +233,8 @@ const ResponsesPage: React.FC = () => {
                     </span>
                   </div>
                   
-                  <h3 className="font-medium mb-1">{feedback.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{feedback.description}</p>
+                  <h3 className="font-medium mb-1">{feedback.message}</h3>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{feedback.reply || 'No reply yet'}</p>
                   
                   <div className="flex justify-between items-center text-xs text-gray-500">
                     <span>Department: {getDepartmentName(feedback.departmentId)}</span>
@@ -193,10 +252,10 @@ const ResponsesPage: React.FC = () => {
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{selectedFeedback.title}</CardTitle>
+                  <CardTitle className="text-lg">{selectedFeedback.message}</CardTitle>
                   <div className="flex gap-2">
-                    <Badge className={getTypeColor(selectedFeedback.type)}>
-                      {selectedFeedback.type.toUpperCase()}
+                    <Badge className={getTypeColor(selectedFeedback.category)}>
+                      {selectedFeedback.category.toUpperCase()}
                     </Badge>
                     <Badge className={getStatusColor(selectedFeedback.status)}>
                       {getStatusIcon(selectedFeedback.status)}
@@ -208,7 +267,7 @@ const ResponsesPage: React.FC = () => {
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="font-medium mb-2">Feedback Details</h4>
-                  <p className="text-sm text-gray-700">{selectedFeedback.description}</p>
+                  <p className="text-sm text-gray-700">{selectedFeedback.reply || 'No reply yet'}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">

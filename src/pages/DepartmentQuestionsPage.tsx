@@ -233,7 +233,7 @@ const DepartmentQuestionsPage: React.FC = () => {
                         />
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-2 w-30">
                         <Label>Question Type</Label>
                         <Select
                           value={question.questionType}

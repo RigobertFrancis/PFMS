@@ -8,7 +8,6 @@ import ProgressBar from '@/components/ProgressBar';
 import GaugeChart from '@/components/GaugeChart';
 import { useLanguage } from '@/contexts/LanguageContext';
 import axios from 'axios';
-import { number } from 'zod';
 
 interface Department {
   id: number,
@@ -24,74 +23,105 @@ const Dashboard: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [chartData, setChartData] = useState<any>(null);
   const [feedbackSummary, setFeedbackSummary] = useState<any>(null);
+  const [currentMonthYear, setCurrentMonthYear] = useState('');
+  const [departmentFeedback, setDepartmentFeedback] = useState(0);
 
-  const DEPARTMENT_URL = "http://localhost:8089/api/departments";
+  const BASE_URL = "http://localhost:8089/api";
 
-  // total feedback
   useEffect(() => {
-    const fetchCount = async () => {
-      const total = await axios.get("http://localhost:8089/api/feedbacks/total");
-      setTotalFeedback(total.data);
+    const updateMonthYear = () => {
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('default', {
+        month: 'long',
+        year: 'numeric'
+      });
+      setCurrentMonthYear(formattedDate);
     };
-    fetchCount();
-  },[]);
+    updateMonthYear();
+  }, []);
 
-  // require Attention
+  // Load all data
   useEffect(() => {
-    const fetchCount = async () => {
-      const total = await axios.get("http://localhost:8089/api/responses/urgent/total");
-      setRequireAttention(total.data);
-    };
-    fetchCount();
-  },[]);
+    loadAllData();
+  }, []);
 
-  useEffect(()=> {
-    loadDepartments();
-    fetchChartData();
-    fetchFeedbackSummary();
-  },[]);
+  // Load department feedback when department changes
+  useEffect(() => {
+    if (selectedDepartment) {
+      loadDepartmentFeedback();
+    }
+  }, [selectedDepartment]);
 
-  const loadDepartments = async () =>{
-    const result = await axios.get(`${DEPARTMENT_URL}/all`);
-    setDepartments(result.data);
-  }
+  const loadAllData = async () => {
+    try {
+      const [
+        totalFeedbackRes,
+        requireAttentionRes,
+        departmentsRes,
+        chartDataRes,
+        feedbackSummaryRes
+      ] = await Promise.all([
+        axios.get(`${BASE_URL}/feedbacks/total`),
+        axios.get(`${BASE_URL}/responses/urgent/total`),
+        axios.get(`${BASE_URL}/departments/all`),
+        axios.get(`${BASE_URL}/feedbacks/chart-data`),
+        axios.get(`${BASE_URL}/feedbacks/summary`)
+      ]);
 
-  const fetchChartData = async () => {
-    const result = await axios.get('http://localhost:8089/api/feedbacks/chart-data');
-    setChartData(result.data);
-  }
+      setTotalFeedback(totalFeedbackRes.data);
+      setRequireAttention(requireAttentionRes.data);
+      setDepartments(departmentsRes.data);
+      setChartData(chartDataRes.data);
+      setFeedbackSummary(feedbackSummaryRes.data);
 
-  const fetchFeedbackSummary = async () => {
-    // You may need to adjust this endpoint to match your backend for summary by type
-    const result = await axios.get('http://localhost:8089/api/feedbacks/summary');
-    setFeedbackSummary(result.data);
-  }
+      // Set first department as default
+      if (departmentsRes.data.length > 0) {
+        setSelectedDepartment(departmentsRes.data[0].id.toString());
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
+  };
 
-  // Find the selected department object
-  const currentDepartment = departments.find(d => d.id.toString() === selectedDepartment) || departments[0];
-  const totalFeedbackPercentage = currentDepartment && totalFeedback ? ((currentDepartment.totalFeedback || 0) / totalFeedback * 100).toFixed(1) : 0;
+  const loadDepartmentFeedback = async () => {
+    if (!selectedDepartment) return;
+    
+    try {
+      const response = await axios.get(`${BASE_URL}/feedbacks/department/total?departmentId=${selectedDepartment}`);
+      setDepartmentFeedback(response.data);
+    } catch (error) {
+      console.error('Error loading department feedback:', error);
+      setDepartmentFeedback(0);
+    }
+  };
+
+  // Calculate department percentage
+  const departmentPercentage = totalFeedback > 0 ? ((departmentFeedback / totalFeedback) * 100).toFixed(1) : '0';
 
   return (
-    <div className="h-screen flex flex-col p-4 overflow-hidden">
-      <div className="flex-shrink-0 mb-4">
-        <h1 className="text-2xl font-bold">{t('dashboard')}</h1>
+    <div className="h-screen flex flex-col p-6 bg-gray-50">
+      <div className="flex-shrink-0 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">{t('dashboard')}</h1>
+        <p className="text-gray-600 mt-1">Welcome to your feedback management dashboard</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0 mb-4">
-        <DashboardCard title={t('totalFeedback')} className="h-32">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-shrink-0 mb-6">
+        <DashboardCard title={t('totalFeedback')} className="h-32 bg-white shadow-sm border-0">
           <div className="flex flex-col items-center justify-center h-full">
             <StatNumber 
               value={totalFeedback} 
-              valueClassName="text-green-600 text-xl" 
+              valueClassName="text-green-600 text-2xl font-bold" 
             />
-            <Badge variant="outline" className="mt-1 text-xs">April 2025</Badge>
+            <Badge variant="outline" className="mt-2 text-xs bg-green-50 text-green-700 border-green-200">
+              {currentMonthYear}
+            </Badge>
           </div>
         </DashboardCard>
         
-        <DashboardCard title={t('departmentsTitle')} className="h-32">
+        <DashboardCard title={t('departmentsTitle')} className="h-32 bg-white shadow-sm border-0">
           <div className="flex flex-col justify-between h-full">
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-9 text-sm bg-gray-50 border-gray-200">
                 <SelectValue placeholder="Select a department" />
               </SelectTrigger>
               <SelectContent>
@@ -101,52 +131,55 @@ const Dashboard: React.FC = () => {
               </SelectContent>
             </Select>
             
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-lg font-bold">{currentDepartment?.totalFeedback?.toLocaleString() || 0}</span>
-              <span className="text-xs text-gray-500">{totalFeedbackPercentage}% of total</span>
+            <div className="flex justify-between items-center mt-3">
+              <span className="text-xl font-bold text-gray-800">{departmentFeedback.toLocaleString()}</span>
+              <span className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded-full">
+                {departmentPercentage}% of total
+              </span>
             </div>
           </div>
         </DashboardCard>
         
-        <DashboardCard title={t('requiresAttention')} className="h-32">
+        <DashboardCard title={t('requiresAttention')} className="h-32 bg-white shadow-sm border-0">
           <div className="flex flex-col items-center justify-center h-full">
             <StatNumber 
               value={requireAttention} 
-              valueClassName="text-red-500 text-xl" 
+              valueClassName="text-red-500 text-2xl font-bold" 
             />
+            <p className="text-xs text-gray-500 mt-1">Need immediate response</p>
           </div>
         </DashboardCard>
         
-        <DashboardCard title={t('response')} className="h-32">
-          <div className="flex flex-col justify-center space-y-2 h-full">
-            <div className="flex justify-between items-center p-2 bg-gray-100 rounded text-sm">
-              <span className="font-medium">2</span>
-              <span className="text-xs text-gray-600">{t('response')}</span>
+        <DashboardCard title={'Notifications'} className="h-32 bg-white shadow-sm border-0">
+          <div className="flex flex-col justify-center space-y-3 h-full">
+            <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+              <span className="font-semibold text-orange-700">7+</span>
+              <span className="text-xs text-orange-600">{t('notifications')}</span>
             </div>
+            {/* <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+              <span className="font-semibold text-blue-700">2</span>
+              <span className="text-xs text-blue-600">{t('response')}</span>
+            </div> */}
             
-            <div className="flex justify-between items-center p-2 bg-gray-100 rounded text-sm">
-              <span className="font-medium">7+</span>
-              <span className="text-xs text-gray-600">{t('notifications')}</span>
-            </div>
           </div>
         </DashboardCard>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-        <DashboardCard title="" className="h-full flex flex-col">
-          <div className="flex justify-between mb-3 flex-shrink-0">
-            <div className="flex gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+        <DashboardCard title="Feedback Trends" className="h-full flex flex-col bg-white shadow-sm border-0">
+          <div className="flex justify-between mb-4 flex-shrink-0">
+            <div className="flex gap-6">
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-feedback-suggestion rounded-full mr-2"></div>
-                <span className="text-sm">{t('suggestions')}</span>
+                <span className="text-sm font-medium">{t('suggestions')}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-feedback-complaint rounded-full mr-2"></div>
-                <span className="text-sm">{t('complaints')}</span>
+                <span className="text-sm font-medium">{t('complaints')}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-feedback-compliment rounded-full mr-2"></div>
-                <span className="text-sm">{t('compliments')}</span>
+                <span className="text-sm font-medium">{t('compliments')}</span>
               </div>
             </div>
           </div>
@@ -155,17 +188,17 @@ const Dashboard: React.FC = () => {
           </div>
         </DashboardCard>
         
-        <DashboardCard title={t('feedbackCategories')} className="h-full flex flex-col">
-          <div className="space-y-4 flex-1 overflow-y-auto">
+        <DashboardCard title={t('feedbackCategories')} className="h-full flex flex-col bg-white shadow-sm border-0">
+          <div className="space-y-6 flex-1 overflow-y-auto p-2">
             {feedbackSummary ? (
               <>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <div className="w-4 h-4 bg-red-400 rounded-full mr-2"></div>
+                      <div className="w-4 h-4 bg-red-400 rounded-full mr-3"></div>
                       <span className="font-medium text-sm">{t('complaints')}</span>
                     </div>
-                    <span className="font-medium text-sm">{feedbackSummary.byType.complaints.toLocaleString()}</span>
+                    <span className="font-bold text-sm">{feedbackSummary.byType.complaints.toLocaleString()}</span>
                   </div>
                   <ProgressBar 
                     value={feedbackSummary.byType.complaints} 
@@ -173,15 +206,18 @@ const Dashboard: React.FC = () => {
                     color="bg-feedback-complaint" 
                     percentage={feedbackSummary.byType.complaints && feedbackSummary.total ? Math.round((feedbackSummary.byType.complaints / feedbackSummary.total) * 100) : 0}
                   />
-                  <div className="text-xs text-gray-500">{feedbackSummary.byType.complaints && feedbackSummary.total ? ((feedbackSummary.byType.complaints / feedbackSummary.total) * 100).toFixed(0) : 0}% {t('ofTotal')}</div>
+                  <div className="text-xs text-gray-500 text-right">
+                    {feedbackSummary.byType.complaints && feedbackSummary.total ? ((feedbackSummary.byType.complaints / feedbackSummary.total) * 100).toFixed(1) : 0}% {t('ofTotal')}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <div className="w-4 h-4 bg-blue-400 rounded-full mr-2"></div>
+                      <div className="w-4 h-4 bg-blue-400 rounded-full mr-3"></div>
                       <span className="font-medium text-sm">{t('suggestions')}</span>
                     </div>
-                    <span className="font-medium text-sm">{feedbackSummary.byType.suggestions.toLocaleString()}</span>
+                    <span className="font-bold text-sm">{feedbackSummary.byType.suggestions.toLocaleString()}</span>
                   </div>
                   <ProgressBar 
                     value={feedbackSummary.byType.suggestions} 
@@ -189,15 +225,18 @@ const Dashboard: React.FC = () => {
                     color="bg-feedback-suggestion" 
                     percentage={feedbackSummary.byType.suggestions && feedbackSummary.total ? Math.round((feedbackSummary.byType.suggestions / feedbackSummary.total) * 100) : 0}
                   />
-                  <div className="text-xs text-gray-500">{feedbackSummary.byType.suggestions && feedbackSummary.total ? ((feedbackSummary.byType.suggestions / feedbackSummary.total) * 100).toFixed(0) : 0}% {t('ofTotal')}</div>
+                  <div className="text-xs text-gray-500 text-right">
+                    {feedbackSummary.byType.suggestions && feedbackSummary.total ? ((feedbackSummary.byType.suggestions / feedbackSummary.total) * 100).toFixed(1) : 0}% {t('ofTotal')}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <div className="w-4 h-4 bg-green-400 rounded-full mr-2"></div>
+                      <div className="w-4 h-4 bg-green-400 rounded-full mr-3"></div>
                       <span className="font-medium text-sm">{t('compliments')}</span>
                     </div>
-                    <span className="font-medium text-sm">{feedbackSummary.byType.compliments.toLocaleString()}</span>
+                    <span className="font-bold text-sm">{feedbackSummary.byType.compliments.toLocaleString()}</span>
                   </div>
                   <ProgressBar 
                     value={feedbackSummary.byType.compliments} 
@@ -205,11 +244,13 @@ const Dashboard: React.FC = () => {
                     color="bg-feedback-compliment" 
                     percentage={feedbackSummary.byType.compliments && feedbackSummary.total ? Math.round((feedbackSummary.byType.compliments / feedbackSummary.total) * 100) : 0}
                   />
-                  <div className="text-xs text-gray-500">{feedbackSummary.byType.compliments && feedbackSummary.total ? ((feedbackSummary.byType.compliments / feedbackSummary.total) * 100).toFixed(0) : 0}% {t('ofTotal')}</div>
+                  <div className="text-xs text-gray-500 text-right">
+                    {feedbackSummary.byType.compliments && feedbackSummary.total ? ((feedbackSummary.byType.compliments / feedbackSummary.total) * 100).toFixed(1) : 0}% {t('ofTotal')}
+                  </div>
                 </div>
               </>
             ) : (
-              <div className="text-center text-gray-400">Loading...</div>
+              <div className="text-center text-gray-400 py-8">Loading feedback summary...</div>
             )}
           </div>
         </DashboardCard>

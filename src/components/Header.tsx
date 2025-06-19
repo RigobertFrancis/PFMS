@@ -1,4 +1,3 @@
-
 /**
  * Header Component
  * 
@@ -55,8 +54,9 @@ const Header: React.FC = () => {
           </svg>
         </div> */}
         <div>
-          <h1 className="font-bold text-lg uppercase">{t('appName')}</h1>
-          <p className="text-xs uppercase">{t('appSubtitle')}</p>
+          <h1 className="font-bold text-xl tracking-wide text-black/70">
+            PATIENT FEEDBACK MANAGEMENT SYSTEM
+          </h1>
         </div>
       </div>
       

@@ -69,6 +69,7 @@ interface Feedback {
   questionAnswer: string;
   createdAt: string;
   departmentId: number;
+  patientId: number;
 }
 
 const DepartmentPage: React.FC = () => {
@@ -164,9 +165,7 @@ const DepartmentPage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  
 
   if (error || !department) {
     return (
@@ -189,15 +188,57 @@ const DepartmentPage: React.FC = () => {
     const dateStr = isNaN(dateObj.getTime()) ? '-' : dateObj.toISOString().slice(0, 10);
     const search = searchValue.toLowerCase();
     return (
-      feedback.id.toString().toLowerCase().includes(search) ||
+      feedback.patientId.toString().toLowerCase().includes(search) ||
       (feedback.question && feedback.question.toLowerCase().includes(search)) ||
       (feedback.questionAnswer && feedback.questionAnswer.toLowerCase().includes(search)) ||
       dateStr.includes(search)
     );
+  }).sort((a, b) => {
+    // Sort by createdAt in descending order (most recent first)
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+    return dateB.getTime() - dateA.getTime();
   });
 
   const handleEditFeedbackForm = () => {
     navigate(`/departments/${departmentId}/feedback-form`);
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Check if it's today
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    }
+    
+    // Check if it's yesterday
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Loading...</h2>
+            <p className="text-gray-500">Please wait while we load the department data</p>
+          </div>
+        </div>
+      );
+    }
+    // Format as 'June 06, 2025'
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: '2-digit'
+    });
   };
 
   return (
@@ -290,8 +331,8 @@ const DepartmentPage: React.FC = () => {
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-100">
-                      <TableHead className="w-[100px] font-bold text-gray-700 uppercase">ID</TableHead>
+                    <TableRow className="bg-med-blue hover:bg-med-blue/80">
+                      <TableHead className="w-[120px] font-bold text-gray-700 ">Patient</TableHead>
                       <TableHead className="font-bold text-gray-700 uppercase">Type</TableHead>
                       <TableHead className="font-bold text-gray-700 uppercase">Question</TableHead>
                       <TableHead className="font-bold text-gray-700 uppercase">Answer</TableHead>
@@ -301,12 +342,12 @@ const DepartmentPage: React.FC = () => {
                   <TableBody>
                     {filteredFeedbacks.slice(0, 10).map((feedback) => (
                       <TableRow key={feedback.id}>
-                        <TableCell className="font-medium">{feedback.id}</TableCell>
+                        <TableCell className="font-medium">patient-{feedback.patientId}</TableCell>
                         <TableCell>
                           <span className={
-                            feedback.category === 'complaint' ? 'bg-feedback-complaint text-white px-2 py-1 rounded-full text-xs font-semibold' :
-                            feedback.category === 'suggestion' ? 'bg-feedback-suggestion text-white px-2 py-1 rounded-full text-xs font-semibold' :
-                            feedback.category === 'compliment' ? 'bg-feedback-compliment text-white px-2 py-1 rounded-full text-xs font-semibold' :
+                            feedback.category === 'COMPLAINT' ? 'px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border-red-200' :
+                            feedback.category === 'SUGGESTION' ? 'px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border-blue-200' :
+                            feedback.category === 'COMPLIMENT' ? 'px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-green-200' :
                             'bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold'
                           }>
                             {feedback.category.charAt(0).toUpperCase() + feedback.category.slice(1)}
@@ -314,10 +355,7 @@ const DepartmentPage: React.FC = () => {
                         </TableCell>
                         <TableCell>{feedback.question}</TableCell>
                         <TableCell>{feedback.questionAnswer}</TableCell>
-                        <TableCell>{(() => {
-                          const date = new Date(feedback.createdAt);
-                          return isNaN(date.getTime()) ? '-' : date.toISOString().slice(0, 10);
-                        })()}</TableCell>
+                        <TableCell>{formatDate(feedback.createdAt)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
