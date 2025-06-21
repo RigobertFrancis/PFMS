@@ -1,27 +1,40 @@
-
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartData } from '@/lib/types';
 
 interface FeedbackTypeChartProps {
-  data: ChartData[];
+  data: ChartData[] | null;
   height?: number;
 }
 
 const FeedbackTypeChart: React.FC<FeedbackTypeChartProps> = ({ data, height = 300 }) => {
+  // Return loading state if data is null or empty
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-400">
+        Loading chart data...
+      </div>
+    );
+  }
+
+  // Transform data to include proper period labels
+  const transformedData = data.map(item => ({
+    ...item,
+    period: item.period || `${item.week || 1}`
+  }));
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart
-        data={data}
+        data={transformedData}
         margin={{
           top: 5,
-          right: 30,
-          left: 20,
+          right: 10,
+          left: 10,
           bottom: 5,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="week" />
         <YAxis />
         <Tooltip />
         <Line

@@ -361,9 +361,9 @@ const AnalyticsPage: React.FC = () => {
               <Legend />
               {selectedType === 'all' ? (
                 <>
-                  <Bar dataKey="complaints" fill="#ff6b6b" name="Complaints" />
-                  <Bar dataKey="suggestions" fill="#4dabf7" name="Suggestions" />
-                  <Bar dataKey="compliments" fill="#40c057" name="Compliments" />
+              <Bar dataKey="complaints" fill="#ff6b6b" name="Complaints" />
+              <Bar dataKey="suggestions" fill="#4dabf7" name="Suggestions" />
+              <Bar dataKey="compliments" fill="#40c057" name="Compliments" />
                 </>
               ) : selectedType === 'complaint' ? (
                 <Bar dataKey="complaints" fill="#ff6b6b" name="Complaints" />
@@ -408,9 +408,9 @@ const AnalyticsPage: React.FC = () => {
               <Legend />
               {selectedType === 'all' ? (
                 <>
-                  <Line type="monotone" dataKey="complaints" stroke="#ff6b6b" strokeWidth={3} name="Complaints" />
-                  <Line type="monotone" dataKey="suggestions" stroke="#4dabf7" strokeWidth={3} name="Suggestions" />
-                  <Line type="monotone" dataKey="compliments" stroke="#40c057" strokeWidth={3} name="Compliments" />
+              <Line type="monotone" dataKey="complaints" stroke="#ff6b6b" strokeWidth={3} name="Complaints" />
+              <Line type="monotone" dataKey="suggestions" stroke="#4dabf7" strokeWidth={3} name="Suggestions" />
+              <Line type="monotone" dataKey="compliments" stroke="#40c057" strokeWidth={3} name="Compliments" />
                 </>
               ) : selectedType === 'complaint' ? (
                 <Line type="monotone" dataKey="complaints" stroke="#ff6b6b" strokeWidth={3} name="Complaints" />
@@ -598,24 +598,24 @@ const AnalyticsPage: React.FC = () => {
             Line
           </Button>
          
-            <Button 
-              variant={chartType === 'bar' ? 'default' : 'outline'} 
-              onClick={() => setChartType('bar')}
-              className="flex items-center gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Bar
-            </Button>
+          <Button 
+            variant={chartType === 'bar' ? 'default' : 'outline'} 
+            onClick={() => setChartType('bar')}
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Bar
+          </Button>
            
           {selectedType === 'all' && (
-            <Button 
-              variant={chartType === 'pie' ? 'default' : 'outline'} 
-              onClick={() => setChartType('pie')}
-              className="flex items-center gap-2"
-            >
-              <PieChartIcon className="h-4 w-4" />
-              Pie
-            </Button>
+          <Button 
+            variant={chartType === 'pie' ? 'default' : 'outline'} 
+            onClick={() => setChartType('pie')}
+            className="flex items-center gap-2"
+          >
+            <PieChartIcon className="h-4 w-4" />
+            Pie
+          </Button>
           )}
         </div>
       </div>

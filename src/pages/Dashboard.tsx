@@ -25,6 +25,7 @@ const Dashboard: React.FC = () => {
   const [feedbackSummary, setFeedbackSummary] = useState<any>(null);
   const [currentMonthYear, setCurrentMonthYear] = useState('');
   const [departmentFeedback, setDepartmentFeedback] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const BASE_URL = "http://localhost:8089/api";
 
@@ -59,13 +60,15 @@ const Dashboard: React.FC = () => {
         requireAttentionRes,
         departmentsRes,
         chartDataRes,
-        feedbackSummaryRes
+        feedbackSummaryRes,
+        notificationsRes
       ] = await Promise.all([
         axios.get(`${BASE_URL}/feedbacks/total`),
         axios.get(`${BASE_URL}/responses/urgent/total`),
         axios.get(`${BASE_URL}/departments/all`),
         axios.get(`${BASE_URL}/feedbacks/chart-data`),
-        axios.get(`${BASE_URL}/feedbacks/summary`)
+        axios.get(`${BASE_URL}/feedbacks/summary`),
+        axios.get(`${BASE_URL}/notifications`)
       ]);
 
       setTotalFeedback(totalFeedbackRes.data);
@@ -73,6 +76,14 @@ const Dashboard: React.FC = () => {
       setDepartments(departmentsRes.data);
       setChartData(chartDataRes.data);
       setFeedbackSummary(feedbackSummaryRes.data);
+      
+      // Debug chart data
+      console.log('Chart data from API:', chartDataRes.data);
+      
+      // Calculate unread notifications count
+      const notifications = notificationsRes.data;
+      const unreadCount = notifications.filter((notification: any) => !notification.read).length;
+      setUnreadNotifications(unreadCount);
 
       // Set first department as default
       if (departmentsRes.data.length > 0) {
@@ -153,7 +164,9 @@ const Dashboard: React.FC = () => {
         <DashboardCard title={'Notifications'} className="h-32 bg-white shadow-sm border-0">
           <div className="flex flex-col justify-center space-y-3 h-full">
             <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-              <span className="font-semibold text-orange-700">7+</span>
+              <span className="font-semibold text-orange-700">
+                {unreadNotifications > 0 ? unreadNotifications : 0}
+              </span>
               <span className="text-xs text-orange-600">{t('notifications')}</span>
             </div>
             {/* <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">

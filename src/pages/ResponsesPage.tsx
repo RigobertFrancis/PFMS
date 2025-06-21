@@ -49,12 +49,50 @@ const ResponsesPage: React.FC = () => {
     loadData();
   }, []);
 
-  // Check if we have a specific feedback ID from navigation state
+  // Check if we have a specific feedback ID or patientId from navigation state
   useEffect(() => {
-    if (location.state?.selectedFeedbackId && feedbacks.length > 0) {
-      const feedback = feedbacks.find(f => f.id === location.state.selectedFeedbackId);
-      if (feedback) {
-        setSelectedFeedback(feedback);
+    if (feedbacks.length > 0) {
+      let feedbackToSelect = null;
+      
+      console.log('Location state:', location.state);
+      console.log('Available feedbacks:', feedbacks.map(f => ({ id: f.id, patientId: f.patientId, category: f.category })));
+      
+      // First check for selectedFeedbackId (for backward compatibility)
+      if (location.state?.selectedFeedbackId) {
+        feedbackToSelect = feedbacks.find(f => f.id === location.state.selectedFeedbackId);
+        console.log('Found feedback by ID:', feedbackToSelect);
+      }
+      // Then check for patientId (new notification flow)
+      else if (location.state?.patientId) {
+        console.log('Looking for patientId:', location.state.patientId);
+        
+        // Try different comparison methods to handle type mismatches
+        const patientFeedbacks = feedbacks.filter(f => {
+          // Convert both to strings for comparison
+          const feedbackPatientId = f.patientId.toString();
+          const notificationPatientId = location.state.patientId.toString();
+          
+          console.log(`Comparing feedback patientId: ${feedbackPatientId} with notification patientId: ${notificationPatientId}`);
+          
+          return feedbackPatientId === notificationPatientId;
+        });
+        
+        console.log('Found patient feedbacks:', patientFeedbacks);
+        
+        if (patientFeedbacks.length > 0) {
+          // Sort by creation date and get the most recent
+          feedbackToSelect = patientFeedbacks.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )[0];
+          console.log('Selected most recent feedback:', feedbackToSelect);
+        }
+      }
+      
+      if (feedbackToSelect) {
+        setSelectedFeedback(feedbackToSelect);
+        console.log('Set selected feedback:', feedbackToSelect);
+      } else {
+        console.log('No feedback found to select');
       }
     }
   }, [location.state, feedbacks]);
@@ -138,7 +176,7 @@ const ResponsesPage: React.FC = () => {
 
   // Helper to check if date is today or yesterday
   const getDisplayDate = (dateString: string, status?: string) => {
-    if (status && status.toUpperCase() === 'NEW') return 'Not Modified';
+    if (status && status.toUpperCase() === 'NEW') return 'Not Responded';
     const date = new Date(dateString);
     const now = new Date();
     const yesterday = new Date();
