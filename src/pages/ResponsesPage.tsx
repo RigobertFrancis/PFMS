@@ -476,7 +476,7 @@ const ResponsesPage: React.FC = () => {
                     <p>{getDisplayDate(selectedFeedback.createdAt)}</p>
                   </div>
                   <div>
-                    <span className="font-medium">Modified:</span>
+                    <span className="font-medium">Responded:</span>
                     <p>{getDisplayDate(selectedFeedback.modifiedAt, selectedFeedback.status)}</p>
                   </div>
                 </div>

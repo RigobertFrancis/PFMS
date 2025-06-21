@@ -239,7 +239,7 @@ const DepartmentQuestionsPage: React.FC = () => {
                           value={question.questionType}
                           onValueChange={(value) => updateQuestion(index, 'questionType', value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-48">
                             <SelectValue placeholder="Select question type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -257,6 +257,7 @@ const DepartmentQuestionsPage: React.FC = () => {
                             {question.options?.map((option, optionIndex) => (
                               <div key={optionIndex} className="flex gap-2">
                                 <Input
+                                  className="w-64"
                                   value={option}
                                   onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                                   placeholder={`Option ${optionIndex + 1}`}
@@ -274,7 +275,7 @@ const DepartmentQuestionsPage: React.FC = () => {
                             <Button
                               variant="outline"
                               onClick={() => addOption(index)}
-                              className="w-full"
+                              className="w-64"
                             >
                               <Plus className="h-4 w-4 mr-2" />
                               Add Option

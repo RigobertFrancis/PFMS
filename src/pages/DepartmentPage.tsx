@@ -335,8 +335,8 @@ const DepartmentPage: React.FC = () => {
                       <TableHead className="w-[120px] font-bold text-gray-700 ">Patient</TableHead>
                       <TableHead className="font-bold text-gray-700 uppercase">Type</TableHead>
                       <TableHead className="font-bold text-gray-700 uppercase">Question</TableHead>
-                      <TableHead className="font-bold text-gray-700 uppercase">Answer</TableHead>
-                      <TableHead className="font-bold text-gray-700 uppercase">Date</TableHead>
+                      <TableHead className="w-[150px] font-bold text-gray-700 uppercase">Answer</TableHead>
+                      <TableHead className="w-[150px] font-bold text-gray-700 uppercase">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
