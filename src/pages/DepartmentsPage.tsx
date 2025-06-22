@@ -36,6 +36,7 @@ import { Edit, Trash2, LayoutDashboard, MessageSquare, FileText, ChartBar, Setti
 import { toast } from 'sonner';
 import axios from "axios";
 import { error } from 'console';
+import { useTranslationSync } from '@/hooks/useTranslation';
 
 interface Department {
   id: number;
@@ -52,6 +53,7 @@ interface Department {
 
 const DepartmentsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslationSync();
   const [departmentsList, setDepartmentsList] = useState<Department[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -93,7 +95,7 @@ const DepartmentsPage: React.FC = () => {
 
       if (!Array.isArray(departmentsData)) {
         console.error('Invalid API response structure:', result.data);
-        setError('Invalid response format from server');
+        setError(t('Failed to load'));
         return;
       }
 
@@ -143,7 +145,7 @@ const DepartmentsPage: React.FC = () => {
       setDepartmentsList(departments);
     } catch (err) {
       console.error('Error loading departments:', err);
-      setError('Failed to load departments');
+      setError(t('Failed to load'));
     }
   };
 
@@ -151,10 +153,10 @@ const DepartmentsPage: React.FC = () => {
     try {
       await axios.delete(`${DEPARTMENT_URL}/remove/${id}`);
       await loadDepartments();
-      toast.success("Department deleted successfully");
+      toast.success(t('Department deleted successfully'));
     } catch (err) {
       console.error('Error deleting department:', err);
-      toast.error("Failed to delete department");
+      toast.error(t('Failed to delete department'));
     }
   };
 
@@ -199,36 +201,20 @@ const DepartmentsPage: React.FC = () => {
               }
             }
           );
-          console.log('Questions added successfully:', questionsResponse.data);
+          console.log('Questions added:', questionsResponse.data);
         } catch (questionsError) {
           console.error('Error adding questions:', questionsError);
-          if (questionsError.response) {
-            console.error('Questions error response:', {
-              status: questionsError.response.status,
-              data: questionsError.response.data,
-              headers: questionsError.response.headers
-            });
-          }
-          throw questionsError; // Re-throw to be caught by outer catch
+          toast.error(t('Department created but failed to add questions'));
         }
       }
-      
+
       await loadDepartments();
       setIsAddDialogOpen(false);
       setNewDepartment({ name: '', description: '', priority: 'MEDIUM', questions: [] });
-      setActiveTab('basic');
-      toast.success("Department added successfully");
+      toast.success(t('Department created successfully'));
     } catch (err) {
-      console.error('Error adding department:', err);
-      if (err.response) {
-        console.error('Error response data:', JSON.stringify(err.response.data, null, 2));
-        console.error('Error response status:', err.response.status);
-        console.error('Request data that caused the error:', JSON.stringify(err.config?.data, null, 2));
-        console.error('Request URL:', err.config?.url);
-        console.error('Request method:', err.config?.method);
-        console.error('Request headers:', err.config?.headers);
-      }
-      toast.error(err.response?.data?.message || "Failed to add department");
+      console.error('Error creating department:', err);
+      toast.error(t('Failed to create department'));
     }
   };
 
@@ -236,52 +222,19 @@ const DepartmentsPage: React.FC = () => {
     if (!currentDepartment) return;
     
     try {
-      // Log the current department state
-      console.log('Current department before update:', currentDepartment);
-
-      // Prepare the department data with all fields including priority in uppercase
-      const departmentData = {
-        id: currentDepartment.id,
+      await axios.put(`${DEPARTMENT_URL}/update/${currentDepartment.id}`, {
         name: currentDepartment.name,
-        description: currentDepartment.description || '',
-        priority: currentDepartment.priority?.toUpperCase() || 'MEDIUM'
-      };
-
-      console.log('Sending update request to:', `${DEPARTMENT_URL}/edit/${currentDepartment.id}`);
-      console.log('Update payload:', JSON.stringify(departmentData, null, 2));
-
-      // First try updating with PUT
-      try {
-        const response = await axios.put(`${DEPARTMENT_URL}/edit/${currentDepartment.id}`, departmentData);
-        console.log('PUT Update response:', response.data);
-      } catch (putError) {
-        console.log('PUT request failed, trying PATCH...');
-        // If PUT fails, try PATCH
-        const response = await axios.patch(`${DEPARTMENT_URL}/edit/${currentDepartment.id}`, departmentData);
-        console.log('PATCH Update response:', response.data);
-      }
-
-      // Reload departments to verify the update
-      await loadDepartments();
+        description: currentDepartment.description,
+        priority: currentDepartment.priority
+      });
       
-      // Verify the update in the departments list
-      const updatedDepartment = departmentsList.find(d => d.id === currentDepartment.id);
-      console.log('Department after update:', updatedDepartment);
-
+      await loadDepartments();
       setIsEditDialogOpen(false);
       setCurrentDepartment(null);
-      toast.success("Department updated successfully");
+      toast.success(t('Department updated successfully'));
     } catch (err) {
       console.error('Error updating department:', err);
-      if (err.response) {
-        console.error('Error response data:', JSON.stringify(err.response.data, null, 2));
-        console.error('Error response status:', err.response.status);
-        console.error('Error response headers:', JSON.stringify(err.response.headers, null, 2));
-        console.error('Request data that caused the error:', JSON.stringify(err.config?.data, null, 2));
-        console.error('Request URL:', err.config?.url);
-        console.error('Request method:', err.config?.method);
-      }
-      toast.error(err.response?.data?.message || "Failed to update department");
+      toast.error(t('Failed to update department'));
     }
   };
 
@@ -293,29 +246,25 @@ const DepartmentsPage: React.FC = () => {
       setIsDeleteDialogOpen(false);
       setCurrentDepartment(null);
     } catch (err) {
-      console.error('Error deleting department:', err);
-      toast.error("Failed to delete department");
+      console.error('Error in handleDeleteDepartment:', err);
     }
   };
 
-  const openEditDialog = (department) => {
-    setCurrentDepartment({
-      ...department,
-      priority: department.priority?.toUpperCase() || 'MEDIUM'
-    });
+  const openEditDialog = (department: Department) => {
+    setCurrentDepartment(department);
     setIsEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (department) => {
+  const openDeleteDialog = (department: Department) => {
     setCurrentDepartment(department);
     setIsDeleteDialogOpen(true);
   };
-  
+
   const addQuestionToDepartment = () => {
     if (!newQuestion.questionText) return;
     
-    const newQuestionWithId = {
-      id: `q-${Date.now()}`,
+    const question = {
+      id: Date.now(),
       questionText: newQuestion.questionText,
       questionType: newQuestion.questionType,
       required: newQuestion.required,
@@ -324,16 +273,16 @@ const DepartmentsPage: React.FC = () => {
     
     setNewDepartment({
       ...newDepartment,
-      questions: [...newDepartment.questions, newQuestionWithId]
+      questions: [...newDepartment.questions, question]
     });
     
     setNewQuestion({
       questionText: '',
       questionType: 'TEXT',
-      required: false
+      required: false,
     });
     
-    toast.success("Question added to the form");
+    toast.success(t('Question added to form'));
   };
 
   const updateQuestionOptions = (questionIndex: number, options: string[]) => {
@@ -350,51 +299,51 @@ const DepartmentsPage: React.FC = () => {
 
   const addOptionToQuestion = (questionIndex: number) => {
     const question = newDepartment.questions[questionIndex];
-    if (!question.options) return;
-
-    const updatedOptions = [...question.options, `Option ${question.options.length + 1}`];
-    updateQuestionOptions(questionIndex, updatedOptions);
+    if (question.options) {
+      const newOptions = [...question.options, `Option ${question.options.length + 1}`];
+      updateQuestionOptions(questionIndex, newOptions);
+    }
   };
 
   const removeOptionFromQuestion = (questionIndex: number, optionIndex: number) => {
     const question = newDepartment.questions[questionIndex];
-    if (!question.options) return;
-
-    const updatedOptions = question.options.filter((_, index) => index !== optionIndex);
-    updateQuestionOptions(questionIndex, updatedOptions);
+    if (question.options) {
+      const newOptions = question.options.filter((_, index) => index !== optionIndex);
+      updateQuestionOptions(questionIndex, newOptions);
+    }
   };
 
   const updateOptionText = (questionIndex: number, optionIndex: number, newText: string) => {
     const question = newDepartment.questions[questionIndex];
-    if (!question.options) return;
-
-    const updatedOptions = [...question.options];
-    updatedOptions[optionIndex] = newText;
-    updateQuestionOptions(questionIndex, updatedOptions);
+    if (question.options) {
+      const newOptions = [...question.options];
+      newOptions[optionIndex] = newText;
+      updateQuestionOptions(questionIndex, newOptions);
+    }
   };
 
   const removeQuestion = (index: number) => {
-    const updatedQuestions = [...newDepartment.questions];
-    updatedQuestions.splice(index, 1);
+    const updatedQuestions = newDepartment.questions.filter((_, i) => i !== index);
     setNewDepartment({
       ...newDepartment,
       questions: updatedQuestions
     });
-    toast.success("Question removed from form");
+    toast.success(t('Question removed from form'));
   };
 
   const questionTypeOptions = [
-    { value: 'TEXT', label: 'Text Input' },
-    { value: 'RATING', label: 'Rating (1-5)' },
-    { value: 'DROPDOWN', label: 'Dropdown Select' },
-    { value: 'RADIO', label: 'Radio Buttons' }
+    { value: 'TEXT', label: t('Text Input') },
+    { value: 'RATING', label: t('Rating (1-5)') },
+    { value: 'DROPDOWN', label: t('Dropdown Select') },
+    { value: 'RADIO', label: t('Radio Buttons') }
   ];
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Loading...</h2>
-          <p className="text-gray-500">Please wait while loading departments!</p>
+          <h2 className="text-xl font-semibold mb-2">{t('Loading...')}</h2>
+          <p className="text-gray-500">{t('Please wait while loading departments!')}</p>
         </div>
       </div>
     );
@@ -403,8 +352,8 @@ const DepartmentsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Departments</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Add New Department</Button>
+        <h1 className="text-2xl font-bold">{t('Departments')}</h1>
+        <Button onClick={() => setIsAddDialogOpen(true)}>{t('Add New Department')}</Button>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -412,7 +361,7 @@ const DepartmentsPage: React.FC = () => {
           <Card key={department.id} className="h-full">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
-                <CardTitle>{department.name}</CardTitle>
+                <CardTitle>{t(department.name)}</CardTitle>
                 <div className="flex gap-1">
                   <Button 
                     variant="ghost" 
@@ -435,12 +384,12 @@ const DepartmentsPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-4">
-                {department.description || `Manage feedback for the ${department.name} department`}
+                {department.description || t(`Manage feedback for the ${department.name} department`)}
               </p>
               
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Total Feedback:</span>
+                  <span>{t('Total Feedback')}:</span>
                   <span className="font-medium">{department.totalFeedback}</span>
                 </div>
                 
@@ -459,7 +408,7 @@ const DepartmentsPage: React.FC = () => {
             </CardContent>
             <CardFooter>
               <Button asChild className="w-full">
-                <Link to={`/departments/${department.id}`}>View Department</Link>
+                <Link to={`/departments/${department.id}`}>{t('View Department')}</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -470,9 +419,9 @@ const DepartmentsPage: React.FC = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Add New Department</DialogTitle>
+            <DialogTitle>{t('Add New Department')}</DialogTitle>
             <DialogDescription>
-              Create a new department to manage patient feedback.
+              {t('Create a new department to manage patient feedback.')}
             </DialogDescription>
           </DialogHeader>
           
@@ -480,79 +429,79 @@ const DepartmentsPage: React.FC = () => {
             <TabsList className="grid grid-cols-5 mb-4">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <LayoutDashboard size={16} />
-                <span>Basic Info</span>
+                <span>{t('Basic Info')}</span>
               </TabsTrigger>
               <TabsTrigger value="feedbackForm" className="flex items-center gap-2">
                 <FileText size={16} />
-                <span>Feedback Form</span>
+                <span>{t('Feedback Form')}</span>
               </TabsTrigger>
               <TabsTrigger value="feedbacks" className="flex items-center gap-2" disabled>
                 <MessageSquare size={16} />
-                <span>Feedbacks</span>
+                <span>{t('Feedbacks')}</span>
               </TabsTrigger>
               <TabsTrigger value="analytics" className="flex items-center gap-2" disabled>
                 <ChartBar size={16} />
-                <span>Analytics</span>
+                <span>{t('Analytics')}</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-2" disabled>
                 <Settings size={16} />
-                <span>Settings</span>
+                <span>{t('Settings')}</span>
               </TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4 py-4">
               <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Department Name*</label>
+                <label htmlFor="name" className="text-sm font-medium">{t('Department Name')}*</label>
                 <Input
                   id="name"
                   value={newDepartment.name}
                   onChange={(e) => setNewDepartment({...newDepartment, name: e.target.value})}
-                  placeholder="Enter department name"
+                  placeholder={t('Enter department name')}
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Description</label>
+                <label htmlFor="description" className="text-sm font-medium">{t('Description')}</label>
                 <Textarea
                   id="description"
                   value={newDepartment.description}
                   onChange={(e) => setNewDepartment({...newDepartment, description: e.target.value})}
-                  placeholder="Enter department description"
+                  placeholder={t('Enter department description')}
                   rows={3}
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="priority" className="text-sm font-medium">Priority</label>
+                <label htmlFor="priority" className="text-sm font-medium">{t('Priority')}</label>
                 <select
                   id="priority"
                   value={newDepartment.priority}
                   onChange={(e) => setNewDepartment({...newDepartment, priority: e.target.value})}
                   className="w-full border rounded-md p-2"
                 >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
+                  <option value="LOW">{t('Low')}</option>
+                  <option value="MEDIUM">{t('Medium')}</option>
+                  <option value="HIGH">{t('High')}</option>
                 </select>
               </div>
               <p className="text-sm text-gray-500">
-                * Required fields
+                * {t('Required fields')}
               </p>
             </TabsContent>
             
             <TabsContent value="feedbackForm" className="space-y-4 py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="border rounded-md p-4 space-y-4">
-                  <h3 className="font-medium text-sm">Add Question</h3>
+                  <h3 className="font-medium text-sm">{t('Add Question')}</h3>
                   <div className="space-y-2">
-                    <label htmlFor="question-text" className="text-sm font-medium">Question Text</label>
+                    <label htmlFor="question-text" className="text-sm font-medium">{t('Question Text')}</label>
                     <Input
                       id="question-text"
                       value={newQuestion.questionText}
                       onChange={(e) => setNewQuestion({...newQuestion, questionText: e.target.value})}
-                      placeholder="Enter question text"
+                      placeholder={t('Enter question text')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="question-type" className="text-sm font-medium">Question Type</label>
+                    <label htmlFor="question-type" className="text-sm font-medium">{t('Question Type')}</label>
                     <select
                       id="question-type"
                       value={newQuestion.questionType}
@@ -580,7 +529,7 @@ const DepartmentsPage: React.FC = () => {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                     <label htmlFor="required" className="text-sm font-medium">
-                      This question is required
+                      {t('This question is required')}
                     </label>
                   </div>
                   <Button 
@@ -589,12 +538,12 @@ const DepartmentsPage: React.FC = () => {
                     className="w-full flex items-center gap-2"
                   >
                     <Plus size={16} />
-                    Add Question
+                    {t('Add Question')}
                   </Button>
                 </div>
                 
                 <div className="border rounded-md p-4">
-                  <h3 className="font-medium mb-3">Form Questions</h3>
+                  <h3 className="font-medium mb-3">{t('Form Questions')}</h3>
                   <div className="overflow-y-auto" style={{ maxHeight: '250px' }}>
                     {newDepartment.questions.length > 0 ? (
                       <div className="space-y-3">
@@ -615,15 +564,15 @@ const DepartmentsPage: React.FC = () => {
                               </Button>
                             </div>
                             <div className="flex gap-2">
-                              <Badge variant="outline">{question.questionType}</Badge>
+                              <Badge variant="outline">{t(question.questionType)}</Badge>
                               {question.required && (
-                                <Badge variant="outline" className="border-red-500 text-red-500">Required</Badge>
+                                <Badge variant="outline" className="border-red-500 text-red-500">{t('Required')}</Badge>
                               )}
                             </div>
                             {question.questionType === 'RADIO' && question.options && (
                               <div className="mt-2 space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm font-medium">Options:</span>
+                                  <span className="text-sm font-medium">{t('Options')}:</span>
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -631,7 +580,7 @@ const DepartmentsPage: React.FC = () => {
                                     className="h-6 text-xs"
                                   >
                                     <Plus size={12} className="mr-1" />
-                                    Add Option
+                                    {t('Add Option')}
                                   </Button>
                                 </div>
                                 <div className="space-y-2">
@@ -660,8 +609,8 @@ const DepartmentsPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="border rounded-md p-4 text-center text-gray-500">
-                        <p>No questions added yet</p>
-                        <p className="text-sm">Add questions using the form on the left</p>
+                        <p>{t('No questions added yet')}</p>
+                        <p className="text-sm">{t('Add questions using the form on the left')}</p>
                       </div>
                     )}
                   </div>
@@ -671,19 +620,19 @@ const DepartmentsPage: React.FC = () => {
             
             <TabsContent value="feedbacks">
               <div className="py-6 text-center text-gray-500">
-                <p>Feedbacks will be available after creating the department</p>
+                <p>{t('Feedbacks will be available after creating the department')}</p>
               </div>
             </TabsContent>
             
             <TabsContent value="analytics">
               <div className="py-6 text-center text-gray-500">
-                <p>Analytics will be available after creating the department</p>
+                <p>{t('Analytics will be available after creating the department')}</p>
               </div>
             </TabsContent>
             
             <TabsContent value="settings">
               <div className="py-6 text-center text-gray-500">
-                <p>Settings will be available after creating the department</p>
+                <p>{t('Settings will be available after creating the department')}</p>
               </div>
             </TabsContent>
           </Tabs>
@@ -696,7 +645,7 @@ const DepartmentsPage: React.FC = () => {
                   onClick={() => setActiveTab("feedbackForm")}
                   className="flex items-center gap-2"
                 >
-                  Next: Feedback Form
+                  {t('Next: Feedback Form')}
                   <FileText size={16} />
                 </Button>
               ) : (
@@ -706,19 +655,19 @@ const DepartmentsPage: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   <LayoutDashboard size={16} />
-                  Back to Basic Info
+                  {t('Back to Basic Info')}
                 </Button>
               )}
             </div>
             <div className="flex gap-2">
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline">{t('Cancel')}</Button>
               </DialogClose>
               <Button 
                 onClick={handleAddDepartment}
                 disabled={!newDepartment.name}
               >
-                Add Department
+                {t('Add Department')}
               </Button>
             </div>
           </DialogFooter>
@@ -729,15 +678,15 @@ const DepartmentsPage: React.FC = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Department</DialogTitle>
+            <DialogTitle>{t('Edit Department')}</DialogTitle>
             <DialogDescription>
-              Update the department details.
+              {t('Update the department details.')}
             </DialogDescription>
           </DialogHeader>
           {currentDepartment && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label htmlFor="edit-name" className="text-sm font-medium">Department Name</label>
+                <label htmlFor="edit-name" className="text-sm font-medium">{t('Department Name')}</label>
                 <Input
                   id="edit-name"
                   value={currentDepartment.name}
@@ -748,7 +697,7 @@ const DepartmentsPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
+                <label htmlFor="edit-description" className="text-sm font-medium">{t('Description')}</label>
                 <Textarea
                   id="edit-description"
                   value={currentDepartment.description || ''}
@@ -760,7 +709,7 @@ const DepartmentsPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="edit-priority" className="text-sm font-medium">Priority</label>
+                <label htmlFor="edit-priority" className="text-sm font-medium">{t('Priority')}</label>
                 <select
                   id="edit-priority"
                   value={currentDepartment.priority || 'MEDIUM'}
@@ -770,18 +719,18 @@ const DepartmentsPage: React.FC = () => {
                   })}
                   className="w-full border rounded-md p-2"
                 >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
+                  <option value="LOW">{t('Low')}</option>
+                  <option value="MEDIUM">{t('Medium')}</option>
+                  <option value="HIGH">{t('High')}</option>
                 </select>
               </div>
             </div>
           )}
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t('Cancel')}</Button>
             </DialogClose>
-            <Button onClick={handleEditDepartment}>Save Changes</Button>
+            <Button onClick={handleEditDepartment}>{t('Save Changes')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -790,16 +739,15 @@ const DepartmentsPage: React.FC = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Are you sure?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will permanently delete the "{currentDepartment?.name}" department and all associated feedback data.
-              This action cannot be undone.
+              {t(`This action will permanently delete the "${currentDepartment?.name}" department and all associated feedback data. This action cannot be undone.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteDepartment} className="bg-red-500 hover:bg-red-600">
-              Delete
+              {t('Delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
