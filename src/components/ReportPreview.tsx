@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,16 +9,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, FileChartColumn, FileChartPie, Clock, TrendingUp, File, Edit, X, BarChart3, PieChart } from 'lucide-react';
+import { FileText, FileChartColumn, FileChartPie, Clock, TrendingUp, File, Edit, X, BarChart3, PieChart, Download, Eye, Printer } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTemplateData, getChangeColor } from '@/utils/reportTemplates';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReportPreviewProps {
   reportType: string;
+  department?: string;
+  dateRange?: string;
+  format?: string;
+  reportBlob?: Blob;
 }
 
-const ReportPreview: React.FC<ReportPreviewProps> = ({ reportType }) => {
+const ReportPreview: React.FC<ReportPreviewProps> = ({ 
+  reportType, 
+  department = 'all', 
+  dateRange = 'last-30-days', 
+  format = 'pdf',
+  reportBlob 
+}) => {
   const { toast } = useToast();
   const templateData = getTemplateData(reportType);
 
@@ -53,6 +62,38 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ reportType }) => {
       description: `${chartName} has been disabled for this report.`,
       variant: "destructive",
     });
+  };
+
+  const handleDownload = () => {
+    if (reportBlob) {
+      const url = URL.createObjectURL(reportBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportType}-${department}-${dateRange}.${format}`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Report Downloaded",
+        description: "Your report has been downloaded successfully.",
+      });
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+    toast({
+      title: "Printing Report",
+      description: "Opening print dialog for the report.",
+    });
+  };
+
+  const handlePreviewFull = () => {
+    if (reportBlob) {
+      const url = URL.createObjectURL(reportBlob);
+      window.open(url, '_blank');
+      URL.revokeObjectURL(url);
+    }
   };
 
   // Sample data for charts
@@ -155,13 +196,51 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ reportType }) => {
   return (
     <Card className="md:col-span-2">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {getReportIcon(reportType)}
-          {templateData?.title || 'Report Preview'}
-        </CardTitle>
-        {templateData?.description && (
-          <p className="text-sm text-gray-600">{templateData.description}</p>
-        )}
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              {getReportIcon(reportType)}
+              {templateData?.title || 'Report Preview'}
+            </CardTitle>
+            {templateData?.description && (
+              <p className="text-sm text-gray-600">{templateData.description}</p>
+            )}
+            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+              <span>Department: {department === 'all' ? 'All Departments' : department}</span>
+              <span>Period: {dateRange}</span>
+              <span>Format: {format.toUpperCase()}</span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviewFull}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Full Preview
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex items-center gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {templateData ? (
@@ -198,31 +277,63 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ reportType }) => {
             {/* Data Table */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Detailed Data</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Metric</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Change</TableHead>
-                    <TableHead>Period</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {templateData.data.map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-medium">{item.metric}</TableCell>
-                      <TableCell>{item.value}</TableCell>
-                      <TableCell className={getChangeColor(item.change)}>{item.change}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{item.period}</TableCell>
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Total Feedback</TableHead>
+                      <TableHead>Complaints</TableHead>
+                      <TableHead>Suggestions</TableHead>
+                      <TableHead>Compliments</TableHead>
+                      <TableHead>Response Rate</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Emergency</TableCell>
+                      <TableCell>1,582</TableCell>
+                      <TableCell>203</TableCell>
+                      <TableCell>645</TableCell>
+                      <TableCell>279</TableCell>
+                      <TableCell>96%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Outpatient Clinic</TableCell>
+                      <TableCell>1,102</TableCell>
+                      <TableCell>281</TableCell>
+                      <TableCell>506</TableCell>
+                      <TableCell>312</TableCell>
+                      <TableCell>94%</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Inpatient Ward</TableCell>
+                      <TableCell>876</TableCell>
+                      <TableCell>203</TableCell>
+                      <TableCell>358</TableCell>
+                      <TableCell>179</TableCell>
+                      <TableCell>93%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Report Summary */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold mb-2 text-blue-900">Report Summary</h3>
+              <p className="text-blue-800 text-sm">
+                This {reportType.replace('-', ' ')} report provides comprehensive insights into 
+                {department === 'all' ? ' all departments' : ` the ${department} department`} 
+                for the period of {dateRange}. The data shows trends, performance metrics, and 
+                actionable recommendations for improvement.
+              </p>
             </div>
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-500">Select a report type to view template</p>
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No preview available for this report type.</p>
           </div>
         )}
       </CardContent>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from 'lucide-react';
 import DepartmentSelector from '@/components/DepartmentSelector';
-import { generateReport, downloadReport } from '@/utils/reportGenerator';
 
 interface ReportGeneratorProps {
   reportType: string;
@@ -23,6 +21,8 @@ interface ReportGeneratorProps {
   setDateRange: (value: string) => void;
   format: string;
   setFormat: (value: string) => void;
+  onGenerate?: () => void;
+  isGenerating?: boolean;
 }
 
 const ReportGenerator: React.FC<ReportGeneratorProps> = ({
@@ -34,25 +34,13 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   setDateRange,
   format,
   setFormat,
+  onGenerate,
+  isGenerating = false,
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGenerateReport = async () => {
-    if (!reportType || !department || !dateRange || !format) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const blob = await generateReport(reportType, department, dateRange, format);
-      const filename = `${reportType}-${department}-${dateRange}-${Date.now()}`;
-      downloadReport(blob, filename, format);
-    } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Error generating report. Please try again.');
-    } finally {
-      setIsGenerating(false);
+  const handleGenerateReport = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onGenerate) {
+      onGenerate();
     }
   };
 
@@ -62,7 +50,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         <CardTitle>Generate Report</CardTitle>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleGenerateReport(); }}>
+        <form className="space-y-4" onSubmit={handleGenerateReport}>
           <div className="space-y-2">
             <Label htmlFor="report-type">Report Type</Label>
             <Select value={reportType} onValueChange={setReportType}>

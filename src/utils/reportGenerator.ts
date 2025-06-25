@@ -1,5 +1,5 @@
-
 import { ReportTemplate } from '@/lib/types';
+import { getEnhancedReportTemplate, getChangeClass } from './reportTemplates';
 
 export const generateReport = async (
   reportType: string,
@@ -7,9 +7,9 @@ export const generateReport = async (
   dateRange: string,
   format: string
 ): Promise<Blob> => {
-  // Simulate report generation with actual templates
-  const template = getReportTemplate(reportType);
-  const data = getReportData(reportType, department, dateRange);
+  // Get enhanced template
+  const template = getEnhancedReportTemplate(reportType, department, dateRange);
+  const data = getEnhancedReportData(reportType, department, dateRange);
   
   if (format === 'pdf') {
     return generatePDFReport(template, data);
@@ -20,586 +20,352 @@ export const generateReport = async (
   }
 };
 
-const getReportTemplate = (reportType: string): string => {
-  const templates = {
-    'feedback-summary': `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Feedback Summary Report</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              min-height: 100vh;
-            }
-            .container {
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-              overflow: hidden;
-            }
-            .header { 
-              background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); 
-              color: white; 
-              padding: 30px; 
-              text-align: center;
-            }
-            .header h1 { margin: 0; font-size: 2.5em; font-weight: 300; }
-            .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 1.1em; }
-            .content { padding: 30px; }
-            .metrics-grid { 
-              display: grid; 
-              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-              gap: 20px; 
-              margin: 30px 0; 
-            }
-            .metric { 
-              background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
-              border: 1px solid #e2e8f0; 
-              padding: 25px; 
-              border-radius: 10px; 
-              text-align: center;
-              position: relative;
-              overflow: hidden;
-            }
-            .metric::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              height: 4px;
-              background: linear-gradient(90deg, #4f46e5, #7c3aed);
-            }
-            .metric h3 { margin: 0 0 15px 0; color: #1e293b; font-size: 1.1em; }
-            .metric .value { font-size: 2.5em; font-weight: bold; color: #4f46e5; margin: 10px 0; }
-            .metric .change { color: #059669; font-weight: 600; }
-            .chart-section { margin: 40px 0; }
-            .chart-placeholder { 
-              background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); 
-              height: 300px; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              border-radius: 10px;
-              border: 2px dashed #cbd5e1;
-              color: #64748b;
-              font-size: 1.2em;
-              font-weight: 500;
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin: 30px 0; 
-              background: white;
-              border-radius: 10px;
-              overflow: hidden;
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            }
-            th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-            th { 
-              background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
-              color: white; 
-              font-weight: 600;
-            }
-            tr:hover { background: #f8fafc; }
-            .section-title { 
-              font-size: 1.8em; 
-              margin: 40px 0 20px 0; 
-              color: #1e293b; 
-              border-bottom: 3px solid #4f46e5; 
-              padding-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>📊 Feedback Summary Report</h1>
-              <p>Generated on {{date}} | Department: {{department}} | Period: {{dateRange}}</p>
-            </div>
-            
-            <div class="content">
-              <h2 class="section-title">Key Performance Metrics</h2>
-              <div class="metrics-grid">
-                <div class="metric">
-                  <h3>Total Feedback Received</h3>
-                  <div class="value">{{totalFeedback}}</div>
-                  <div class="change">{{totalChange}} from previous period</div>
-                </div>
-                <div class="metric">
-                  <h3>Complaints Received</h3>
-                  <div class="value">{{complaints}}</div>
-                  <div class="change">{{complaintsChange}} from previous period</div>
-                </div>
-                <div class="metric">
-                  <h3>Suggestions Received</h3>
-                  <div class="value">{{suggestions}}</div>
-                  <div class="change">{{suggestionsChange}} from previous period</div>
-                </div>
-                <div class="metric">
-                  <h3>Compliments Received</h3>
-                  <div class="value">{{compliments}}</div>
-                  <div class="change">{{complimentsChange}} from previous period</div>
-                </div>
-              </div>
-              
-              <h2 class="section-title">Visual Analytics</h2>
-              <div class="chart-section">
-                <div class="chart-placeholder">📈 Feedback Trend Analysis Chart</div>
-              </div>
-              <div class="chart-section">
-                <div class="chart-placeholder">🍰 Department Distribution Pie Chart</div>
-              </div>
-              
-              <h2 class="section-title">Detailed Department Breakdown</h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Department</th>
-                    <th>Total Feedback</th>
-                    <th>Complaints</th>
-                    <th>Suggestions</th>
-                    <th>Compliments</th>
-                    <th>Response Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {{departmentRows}}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
-    'department-performance': `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Department Performance Report</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
-              min-height: 100vh;
-            }
-            .container {
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-              overflow: hidden;
-            }
-            .header { 
-              background: linear-gradient(135deg, #e74c3c 0%, #f39c12 100%); 
-              color: white; 
-              padding: 30px; 
-              text-align: center;
-            }
-            .header h1 { margin: 0; font-size: 2.5em; font-weight: 300; }
-            .content { padding: 30px; }
-            .scorecard { 
-              display: grid; 
-              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-              gap: 25px; 
-              margin: 30px 0; 
-            }
-            .score { 
-              background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%); 
-              border: 1px solid #fecaca; 
-              padding: 30px; 
-              border-radius: 15px; 
-              text-align: center;
-              position: relative;
-              overflow: hidden;
-            }
-            .score::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              height: 5px;
-              background: linear-gradient(90deg, #e74c3c, #f39c12);
-            }
-            .score h3 { margin: 0 0 20px 0; color: #1f2937; font-size: 1.2em; }
-            .score .value { font-size: 3em; font-weight: bold; color: #e74c3c; margin: 15px 0; }
-            .score .change { color: #059669; font-weight: 600; font-size: 1.1em; }
-            .chart-placeholder { 
-              background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); 
-              height: 250px; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              margin: 25px 0; 
-              border-radius: 15px;
-              border: 2px dashed #f87171;
-              color: #dc2626;
-              font-size: 1.3em;
-              font-weight: 600;
-            }
-            .section-title { 
-              font-size: 1.8em; 
-              margin: 40px 0 20px 0; 
-              color: #1f2937; 
-              border-bottom: 3px solid #e74c3c; 
-              padding-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎯 Department Performance Scorecard</h1>
-              <p>Generated on {{date}} | Department: {{department}} | Period: {{dateRange}}</p>
-            </div>
-            
-            <div class="content">
-              <h2 class="section-title">Performance Indicators</h2>
-              <div class="scorecard">
-                <div class="score">
-                  <h3>📋 Patient Satisfaction Score</h3>
-                  <div class="value">{{satisfactionScore}}/10</div>
-                  <div class="change">{{satisfactionChange}} from last period</div>
-                </div>
-                <div class="score">
-                  <h3>⏱️ Average Response Time</h3>
-                  <div class="value">{{responseTime}}h</div>
-                  <div class="change">{{responseTimeChange}} improvement</div>
-                </div>
-                <div class="score">
-                  <h3>✅ Resolution Rate</h3>
-                  <div class="value">{{resolutionRate}}%</div>
-                  <div class="change">{{resolutionRateChange}} increase</div>
-                </div>
-              </div>
-              
-              <h2 class="section-title">Performance Analysis</h2>
-              <div class="chart-placeholder">📊 Department Performance Comparison Chart</div>
-              <div class="chart-placeholder">📈 Monthly Trend Analysis</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
-    'response-times': `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Response Time Analysis</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              min-height: 100vh;
-            }
-            .container {
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-              overflow: hidden;
-            }
-            .header { 
-              background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); 
-              color: white; 
-              padding: 30px; 
-              text-align: center;
-            }
-            .content { padding: 30px; }
-            .metrics { 
-              display: grid; 
-              grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-              gap: 25px; 
-              margin: 30px 0; 
-            }
-            .metric { 
-              background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
-              border: 1px solid #bae6fd; 
-              padding: 25px; 
-              border-radius: 12px;
-              position: relative;
-            }
-            .metric::before {
-              content: '⏰';
-              position: absolute;
-              top: 15px;
-              right: 15px;
-              font-size: 2em;
-            }
-            .metric h3 { margin: 0 0 15px 0; color: #0f172a; }
-            .metric .value { font-size: 2.2em; font-weight: bold; color: #0369a1; }
-            .chart-placeholder { 
-              background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
-              height: 280px; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              margin: 25px 0; 
-              border-radius: 12px;
-              border: 2px dashed #0ea5e9;
-              color: #0369a1;
-              font-size: 1.2em;
-              font-weight: 600;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>⏰ Response Time Analysis</h1>
-              <p>Generated on {{date}} | Department: {{department}} | Period: {{dateRange}}</p>
-            </div>
-            
-            <div class="content">
-              <div class="metrics">
-                <div class="metric">
-                  <h3>Average Response Time</h3>
-                  <p class="value">{{avgResponseTime}} hours</p>
-                  <p>Change: <strong>{{responseTimeChange}}</strong></p>
-                </div>
-                <div class="metric">
-                  <h3>SLA Compliance Rate</h3>
-                  <p class="value">{{slaCompliance}}%</p>
-                  <p>Change: <strong>{{slaChange}}</strong></p>
-                </div>
-              </div>
-              
-              <div class="chart-placeholder">📊 Response Time Trends Over Time</div>
-              <div class="chart-placeholder">🎯 SLA Performance Dashboard</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
-    'satisfaction-scores': `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Patient Satisfaction Analysis</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              min-height: 100vh;
-            }
-            .container {
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-              overflow: hidden;
-            }
-            .header { 
-              background: linear-gradient(135deg, #059669 0%, #047857 100%); 
-              color: white; 
-              padding: 30px; 
-              text-align: center;
-            }
-            .content { padding: 30px; }
-            .scores { 
-              display: grid; 
-              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-              gap: 25px; 
-              margin: 30px 0; 
-            }
-            .score { 
-              background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
-              border: 1px solid #bbf7d0; 
-              padding: 30px; 
-              border-radius: 15px; 
-              text-align: center;
-              position: relative;
-            }
-            .score::before {
-              content: '😊';
-              position: absolute;
-              top: 15px;
-              right: 15px;
-              font-size: 2em;
-            }
-            .score h3 { margin: 0 0 15px 0; color: #14532d; }
-            .score .value { font-size: 3em; font-weight: bold; color: #059669; }
-            .chart-placeholder { 
-              background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
-              height: 300px; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              margin: 25px 0; 
-              border-radius: 15px;
-              border: 2px dashed #22c55e;
-              color: #059669;
-              font-size: 1.3em;
-              font-weight: 600;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>😊 Patient Satisfaction Analysis</h1>
-              <p>Generated on {{date}} | Department: {{department}} | Period: {{dateRange}}</p>
-            </div>
-            
-            <div class="content">
-              <div class="scores">
-                <div class="score">
-                  <h3>Overall Satisfaction</h3>
-                  <div class="value">{{overallScore}}/10</div>
-                </div>
-                <div class="score">
-                  <h3>Recommendation Rate</h3>
-                  <div class="value">{{recommendScore}}%</div>
-                </div>
-              </div>
-              
-              <div class="chart-placeholder">📈 Satisfaction Trends Over Time</div>
-              <div class="chart-placeholder">🔍 Category Breakdown Analysis</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
-    'trending-issues': `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Trending Issues Report</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-              min-height: 100vh;
-            }
-            .container {
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-              overflow: hidden;
-            }
-            .header { 
-              background: linear-gradient(135deg, #d97706 0%, #b45309 100%); 
-              color: white; 
-              padding: 30px; 
-              text-align: center;
-            }
-            .content { padding: 30px; }
-            .issues { margin: 30px 0; }
-            .issue { 
-              background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); 
-              border: 1px solid #fde68a; 
-              padding: 20px; 
-              margin: 15px 0; 
-              border-radius: 12px;
-              position: relative;
-            }
-            .issue::before {
-              content: '⚠️';
-              position: absolute;
-              top: 15px;
-              right: 15px;
-              font-size: 1.5em;
-            }
-            .issue h3 { margin: 0 0 10px 0; color: #92400e; }
-            .issue .count { font-size: 1.5em; font-weight: bold; color: #d97706; }
-            .chart-placeholder { 
-              background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%); 
-              height: 280px; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              margin: 25px 0; 
-              border-radius: 12px;
-              border: 2px dashed #f59e0b;
-              color: #d97706;
-              font-size: 1.2em;
-              font-weight: 600;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>📊 Trending Issues Report</h1>
-              <p>Generated on {{date}} | Department: {{department}} | Period: {{dateRange}}</p>
-            </div>
-            
-            <div class="content">
-              <h2>🔥 Top Reported Issues</h2>
-              <div class="issues">
-                <div class="issue">
-                  <h3>Long Wait Times</h3>
-                  <p class="count">{{waitTimeReports}} reports ({{waitTimeChange}})</p>
-                </div>
-                <div class="issue">
-                  <h3>Parking Issues</h3>
-                  <p class="count">{{parkingReports}} reports ({{parkingChange}})</p>
-                </div>
-              </div>
-              
-              <div class="chart-placeholder">📊 Issue Frequency Analysis</div>
-              <div class="chart-placeholder">🌡️ Priority Heatmap</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
+// Enhanced data generation with more realistic and comprehensive data
+const getEnhancedReportData = (reportType: string, department: string, dateRange: string) => {
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  if (reportType === 'feedback-summary') {
+    return getFeedbackSummaryData(department, dateRange, currentDate);
+  } else if (reportType === 'department-performance') {
+    return getDepartmentPerformanceData(department, dateRange, currentDate);
+  }
+
+  // Fallback to basic data
+  return {
+    date: currentDate,
+    department: department === 'all' ? 'All Departments' : department,
+    dateRange: getDateRangeLabel(dateRange),
+    totalFeedback: '1,247',
+    complaints: '156',
+    suggestions: '423',
+    compliments: '668',
+    responseRate: '94%',
+    avgResolutionTime: '2.3 days'
   };
-  
-  return templates[reportType as keyof typeof templates] || templates['feedback-summary'];
 };
 
-const getReportData = (reportType: string, department: string, dateRange: string) => {
-  // Enhanced mock data for report generation
+const getFeedbackSummaryData = (department: string, dateRange: string, currentDate: string) => {
+  const departmentData = getDepartmentFeedbackData(department);
+  const dateRangeLabel = getDateRangeLabel(dateRange);
+  
   return {
-    date: new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }),
-    department: department === 'all' ? 'All Departments' : department.charAt(0).toUpperCase() + department.slice(1),
-    dateRange: dateRange.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    totalFeedback: '1,247',
+    date: currentDate,
+    department: department === 'all' ? 'All Departments' : department,
+    dateRange: dateRangeLabel,
+    
+    // Metrics with realistic data
+    totalFeedback: departmentData.totalFeedback.toLocaleString(),
     totalChange: '+12%',
-    complaints: '156',
+    totalChangeClass: getChangeClass('+12%'),
+    
+    complaints: departmentData.complaints.toLocaleString(),
     complaintsChange: '-8%',
-    suggestions: '423',
+    complaintsChangeClass: getChangeClass('-8%'),
+    
+    suggestions: departmentData.suggestions.toLocaleString(),
     suggestionsChange: '+15%',
-    compliments: '668',
+    suggestionsChangeClass: getChangeClass('+15%'),
+    
+    compliments: departmentData.compliments.toLocaleString(),
     complimentsChange: '+18%',
-    satisfactionScore: '8.9',
-    satisfactionChange: '+0.3',
-    responseTime: '4.2',
-    responseTimeChange: '-1.3 hours',
-    resolutionRate: '87',
-    resolutionRateChange: '+5%',
-    avgResponseTime: '4.2',
-    slaCompliance: '87',
-    slaChange: '+5%',
-    overallScore: '8.9',
-    recommendScore: '92',
-    waitTimeReports: '34',
-    waitTimeChange: '+12',
-    parkingReports: '28',
-    parkingChange: '+8',
-    departmentRows: `
-      <tr><td>Emergency</td><td>324</td><td>45</td><td>123</td><td>156</td><td>94%</td></tr>
-      <tr><td>Surgery</td><td>198</td><td>23</td><td>89</td><td>86</td><td>97%</td></tr>
-      <tr><td>Pediatrics</td><td>156</td><td>12</td><td>67</td><td>77</td><td>99%</td></tr>
-      <tr><td>Cardiology</td><td>145</td><td>18</td><td>72</td><td>55</td><td>92%</td></tr>
-      <tr><td>Radiology</td><td>123</td><td>15</td><td>58</td><td>50</td><td>88%</td></tr>
-    `
+    complimentsChangeClass: getChangeClass('+18%'),
+    
+    responseRate: '94%',
+    responseRateChange: '+3%',
+    responseRateChangeClass: getChangeClass('+3%'),
+    
+    avgResolutionTime: '2.3 days',
+    resolutionTimeChange: '-0.5 days',
+    resolutionTimeChangeClass: getChangeClass('-0.5 days'),
+    
+    // Department breakdown table
+    departmentRows: generateDepartmentRows(),
+    
+    // Key insights
+    topDepartment: 'Pediatrics',
+    topDepartmentScore: '9.5/10',
+    mostImproved: 'Emergency Department',
+    improvementPercentage: '15%',
+    priorityAreas: 'Billing and Pharmacy',
+    overallTrend: 'improved by 8%'
   };
+};
+
+const getDepartmentPerformanceData = (department: string, dateRange: string, currentDate: string) => {
+  const performanceData = getDepartmentPerformanceMetrics(department);
+  const dateRangeLabel = getDateRangeLabel(dateRange);
+  
+  return {
+    date: currentDate,
+    department: department === 'all' ? 'All Departments' : department,
+    dateRange: dateRangeLabel,
+    
+    // Overall score
+    overallScore: performanceData.overallScore,
+    overallChange: '+0.3',
+    overallChangeClass: getChangeClass('+0.3'),
+    
+    // Performance metrics
+    patientSatisfaction: performanceData.patientSatisfaction,
+    satisfactionChange: '+0.2',
+    satisfactionChangeClass: getChangeClass('+0.2'),
+    
+    staffPerformance: performanceData.staffPerformance,
+    staffChange: '+0.4',
+    staffChangeClass: getChangeClass('+0.4'),
+    
+    responseTime: performanceData.responseTime,
+    responseTimeChange: '-0.8 hours',
+    responseTimeChangeClass: getChangeClass('-0.8 hours'),
+    
+    cleanlinessRating: performanceData.cleanlinessRating,
+    cleanlinessChange: '+0.1',
+    cleanlinessChangeClass: getChangeClass('+0.1'),
+    
+    communicationQuality: performanceData.communicationQuality,
+    communicationChange: '+0.3',
+    communicationChangeClass: getChangeClass('+0.3'),
+    
+    waitTimeSatisfaction: performanceData.waitTimeSatisfaction,
+    waitTimeChange: '-0.2',
+    waitTimeChangeClass: getChangeClass('-0.2'),
+    
+    // Performance breakdown table
+    performanceRows: generatePerformanceRows(performanceData),
+    
+    // Insights and recommendations
+    strengths: generateStrengths(department),
+    improvements: generateImprovements(department),
+    recommendations: generateRecommendations(department)
+  };
+};
+
+// Helper functions for generating realistic data
+const getDepartmentFeedbackData = (department: string) => {
+  const baseData = {
+    totalFeedback: 1247,
+    complaints: 156,
+    suggestions: 423,
+    compliments: 668
+  };
+
+  if (department === 'all') {
+    return baseData;
+  }
+
+  // Department-specific multipliers
+  const multipliers = {
+    'emergency': { total: 1.2, complaints: 1.3, suggestions: 1.1, compliments: 0.9 },
+    'outpatient-clinic': { total: 1.0, complaints: 0.9, suggestions: 1.0, compliments: 1.1 },
+    'inpatient-ward': { total: 0.8, complaints: 0.8, suggestions: 0.9, compliments: 0.8 },
+    'radiology': { total: 0.6, complaints: 0.7, suggestions: 0.8, compliments: 0.6 },
+    'laboratory': { total: 0.7, complaints: 0.6, suggestions: 0.7, compliments: 0.7 },
+    'pharmacy': { total: 0.5, complaints: 0.8, suggestions: 0.6, compliments: 0.5 },
+    'billing': { total: 0.8, complaints: 1.2, suggestions: 0.8, compliments: 0.6 },
+    'maternity': { total: 0.4, complaints: 0.4, suggestions: 0.5, compliments: 0.4 }
+  };
+
+  const multiplier = multipliers[department] || { total: 1, complaints: 1, suggestions: 1, compliments: 1 };
+
+  return {
+    totalFeedback: Math.round(baseData.totalFeedback * multiplier.total),
+    complaints: Math.round(baseData.complaints * multiplier.complaints),
+    suggestions: Math.round(baseData.suggestions * multiplier.suggestions),
+    compliments: Math.round(baseData.compliments * multiplier.compliments)
+  };
+};
+
+const getDepartmentPerformanceMetrics = (department: string) => {
+  const baseMetrics = {
+    overallScore: 8.7,
+    patientSatisfaction: 8.9,
+    staffPerformance: 9.1,
+    responseTime: '4.2 hours',
+    cleanlinessRating: 8.7,
+    communicationQuality: 8.8,
+    waitTimeSatisfaction: 7.8
+  };
+
+  if (department === 'all') {
+    return baseMetrics;
+  }
+
+  // Department-specific performance adjustments
+  const adjustments = {
+    'emergency': { overall: 0.2, satisfaction: 0.1, staff: 0.3, response: -1.0, cleanliness: 0.1, communication: 0.2, waitTime: -0.5 },
+    'outpatient-clinic': { overall: 0.1, satisfaction: 0.2, staff: 0.1, response: -0.5, cleanliness: 0.2, communication: 0.1, waitTime: 0.1 },
+    'inpatient-ward': { overall: 0.3, satisfaction: 0.3, staff: 0.4, response: -0.3, cleanliness: 0.3, communication: 0.3, waitTime: 0.2 },
+    'radiology': { overall: 0.0, satisfaction: 0.0, staff: 0.1, response: 0.2, cleanliness: 0.1, communication: 0.0, waitTime: 0.0 },
+    'laboratory': { overall: 0.1, satisfaction: 0.1, staff: 0.2, response: 0.1, cleanliness: 0.2, communication: 0.1, waitTime: 0.1 },
+    'pharmacy': { overall: -0.2, satisfaction: -0.1, staff: 0.0, response: 0.5, cleanliness: 0.0, communication: -0.1, waitTime: -0.3 },
+    'billing': { overall: -0.3, satisfaction: -0.2, staff: -0.1, response: 1.0, cleanliness: 0.0, communication: -0.2, waitTime: -0.4 },
+    'maternity': { overall: 0.4, satisfaction: 0.4, staff: 0.5, response: -0.2, cleanliness: 0.4, communication: 0.4, waitTime: 0.3 }
+  };
+
+  const adjustment = adjustments[department] || { overall: 0, satisfaction: 0, staff: 0, response: 0, cleanliness: 0, communication: 0, waitTime: 0 };
+
+  return {
+    overallScore: Math.max(0, Math.min(10, baseMetrics.overallScore + adjustment.overall)),
+    patientSatisfaction: Math.max(0, Math.min(10, baseMetrics.patientSatisfaction + adjustment.satisfaction)),
+    staffPerformance: Math.max(0, Math.min(10, baseMetrics.staffPerformance + adjustment.staff)),
+    responseTime: adjustResponseTime(baseMetrics.responseTime, adjustment.response),
+    cleanlinessRating: Math.max(0, Math.min(10, baseMetrics.cleanlinessRating + adjustment.cleanliness)),
+    communicationQuality: Math.max(0, Math.min(10, baseMetrics.communicationQuality + adjustment.communication)),
+    waitTimeSatisfaction: Math.max(0, Math.min(10, baseMetrics.waitTimeSatisfaction + adjustment.waitTime))
+  };
+};
+
+const adjustResponseTime = (baseTime: string, adjustment: number): string => {
+  const hours = parseFloat(baseTime.split(' ')[0]) + adjustment;
+  return `${Math.max(0.1, hours).toFixed(1)} hours`;
+};
+
+const generateDepartmentRows = () => {
+  const departments = [
+    { name: 'Emergency', total: 1582, complaints: 203, suggestions: 645, compliments: 279, responseRate: '96%', avgRating: '8.9' },
+    { name: 'Outpatient Clinic', total: 1102, complaints: 281, suggestions: 506, compliments: 312, responseRate: '94%', avgRating: '9.1' },
+    { name: 'Inpatient Ward', total: 876, complaints: 203, suggestions: 358, compliments: 179, responseRate: '93%', avgRating: '9.0' },
+    { name: 'Radiology', total: 643, complaints: 131, suggestions: 236, complaints: 97, responseRate: '91%', avgRating: '8.7' },
+    { name: 'Laboratory', total: 732, complaints: 128, suggestions: 235, complaints: 128, responseRate: '92%', avgRating: '8.8' },
+    { name: 'Pharmacy', total: 589, complaints: 137, suggestions: 163, complaints: 74, responseRate: '89%', avgRating: '8.5' },
+    { name: 'Billing', total: 954, complaints: 374, suggestions: 330, complaints: 138, responseRate: '87%', avgRating: '8.4' },
+    { name: 'Maternity', total: 456, complaints: 53, suggestions: 105, complaints: 53, responseRate: '95%', avgRating: '9.3' }
+  ];
+
+  return departments.map(dept => 
+    `<tr>
+      <td><strong>${dept.name}</strong></td>
+      <td>${dept.total.toLocaleString()}</td>
+      <td>${dept.complaints.toLocaleString()}</td>
+      <td>${dept.suggestions.toLocaleString()}</td>
+      <td>${dept.compliments.toLocaleString()}</td>
+      <td>${dept.responseRate}</td>
+      <td>${dept.avgRating}/10</td>
+    </tr>`
+  ).join('');
+};
+
+const generatePerformanceRows = (performanceData: any) => {
+  const metrics = [
+    { name: 'Patient Satisfaction', current: performanceData.patientSatisfaction, previous: performanceData.patientSatisfaction - 0.2, target: 9.0, status: 'On Track' },
+    { name: 'Staff Performance', current: performanceData.staffPerformance, previous: performanceData.staffPerformance - 0.4, target: 9.0, status: 'Exceeding' },
+    { name: 'Response Time', current: performanceData.responseTime, previous: '5.0 hours', target: '4.0 hours', status: 'On Track' },
+    { name: 'Cleanliness Rating', current: performanceData.cleanlinessRating, previous: performanceData.cleanlinessRating - 0.1, target: 9.0, status: 'Needs Attention' },
+    { name: 'Communication Quality', current: performanceData.communicationQuality, previous: performanceData.communicationQuality - 0.3, target: 9.0, status: 'On Track' },
+    { name: 'Wait Time Satisfaction', current: performanceData.waitTimeSatisfaction, previous: performanceData.waitTimeSatisfaction + 0.2, target: 8.5, status: 'Below Target' }
+  ];
+
+  return metrics.map(metric => {
+    const change = typeof metric.current === 'number' && typeof metric.previous === 'number' 
+      ? (metric.current - metric.previous).toFixed(1)
+      : 'N/A';
+    const changeClass = getChangeClass(change.startsWith('-') ? change : `+${change}`);
+    
+    return `<tr>
+      <td><strong>${metric.name}</strong></td>
+      <td>${metric.current}${typeof metric.current === 'number' ? '/10' : ''}</td>
+      <td>${metric.previous}${typeof metric.previous === 'number' ? '/10' : ''}</td>
+      <td class="${changeClass}">${change.startsWith('-') ? change : `+${change}`}</td>
+      <td>${metric.target}${typeof metric.target === 'number' ? '/10' : ''}</td>
+      <td><span class="status-${metric.status.toLowerCase().replace(' ', '-')}">${metric.status}</span></td>
+    </tr>`;
+  }).join('');
+};
+
+const generateStrengths = (department: string) => {
+  const strengths = {
+    'emergency': [
+      'Excellent response time for critical cases',
+      'High staff satisfaction scores',
+      'Strong communication protocols'
+    ],
+    'outpatient-clinic': [
+      'Consistent appointment scheduling',
+      'Good patient flow management',
+      'High cleanliness ratings'
+    ],
+    'inpatient-ward': [
+      'Excellent patient care quality',
+      'Strong staff-patient relationships',
+      'High overall satisfaction scores'
+    ],
+    'default': [
+      'Consistent service delivery',
+      'Good staff training programs',
+      'Effective feedback collection'
+    ]
+  };
+
+  return (strengths[department] || strengths.default).map(strength => `<li>${strength}</li>`).join('');
+};
+
+const generateImprovements = (department: string) => {
+  const improvements = {
+    'emergency': [
+      'Reduce wait times for non-critical cases',
+      'Improve facility navigation signage',
+      'Enhance patient communication during busy periods'
+    ],
+    'outpatient-clinic': [
+      'Streamline appointment booking process',
+      'Improve parking availability',
+      'Enhance follow-up communication'
+    ],
+    'inpatient-ward': [
+      'Reduce noise levels during night hours',
+      'Improve meal service timing',
+      'Enhance visitor management'
+    ],
+    'default': [
+      'Improve response times',
+      'Enhance communication protocols',
+      'Optimize resource allocation'
+    ]
+  };
+
+  return (improvements[department] || improvements.default).map(improvement => `<li>${improvement}</li>`).join('');
+};
+
+const generateRecommendations = (department: string) => {
+  const recommendations = {
+    'emergency': [
+      'Implement triage optimization system',
+      'Add more staff during peak hours',
+      'Improve facility layout and signage'
+    ],
+    'outpatient-clinic': [
+      'Implement online appointment booking',
+      'Add parking management system',
+      'Enhance patient education materials'
+    ],
+    'inpatient-ward': [
+      'Implement quiet hours protocol',
+      'Optimize meal service scheduling',
+      'Improve visitor management system'
+    ],
+    'default': [
+      'Implement performance monitoring dashboard',
+      'Enhance staff training programs',
+      'Optimize resource allocation based on demand'
+    ]
+  };
+
+  return (recommendations[department] || recommendations.default).map(recommendation => `<li>${recommendation}</li>`).join('');
+};
+
+const getDateRangeLabel = (dateRange: string) => {
+  const labels = {
+    'last-7-days': 'Last 7 Days',
+    'last-30-days': 'Last 30 Days',
+    'last-90-days': 'Last 90 Days',
+    'this-year': 'This Year',
+    'custom': 'Custom Range'
+  };
+  return labels[dateRange] || dateRange;
 };
 
 const generatePDFReport = async (template: string, data: any): Promise<Blob> => {
