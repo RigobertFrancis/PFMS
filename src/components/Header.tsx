@@ -346,14 +346,14 @@ const Header: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Avatar className="border-2 border-white cursor-pointer">
                 <AvatarFallback className="bg-gray-800 text-white">
-                  {user.name.charAt(0).toUpperCase()}
+                  {user.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
-                <span>{user.name}</span>
+                <span>{user.username}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
