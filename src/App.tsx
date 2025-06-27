@@ -59,6 +59,9 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Force root to login for all users */}
+            <Route path="/" element={<Navigate to="/auth/login" replace />} />
+
             {/* Auth Routes */}
             <Route path="auth" element={<AuthLayout />}>
               <Route path="login" element={<LoginPage />} />

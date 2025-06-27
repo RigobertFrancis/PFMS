@@ -20,6 +20,8 @@ interface Feedback {
   modifiedAt: string;
   reply: string;
   departmentId: number;
+  resolvedBy?: string;
+  closedBy?: string;
 }
 
 interface Department {
@@ -517,6 +519,16 @@ const ResponsesPage: React.FC = () => {
                     <span className="font-medium">Responded:</span>
                     <p>{getDisplayDate(selectedFeedback.modifiedAt, selectedFeedback.status)}</p>
                   </div>
+                  {selectedFeedback.resolvedBy && (
+                    <div className="col-span-2">
+                      <span className="font-medium">Resolved By:</span> <span>{selectedFeedback.resolvedBy}</span>
+                    </div>
+                  )}
+                  {selectedFeedback.closedBy && (
+                    <div className="col-span-2">
+                      <span className="font-medium">Closed By:</span> <span>{selectedFeedback.closedBy}</span>
+                    </div>
+                  )}
                 </div>
                 {/* Forward to Department logic for NEW feedbacks */}
                 {selectedFeedback.status.toUpperCase() === 'NEW' && (

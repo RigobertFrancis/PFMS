@@ -51,8 +51,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in on app start
-    const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('userData');
+    const token = sessionStorage.getItem('authToken');
+    const userData = sessionStorage.getItem('userData');
     
     if (token && userData) {
       try {
@@ -60,8 +60,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(parsedUser);
       } catch (error) {
         console.error('Error parsing user data:', error);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('userData');
       }
     }
     setIsLoading(false);
@@ -144,8 +144,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         setUser(userData);
         setPendingOtpEmail(null);
-        localStorage.setItem('authToken', 'dummy-token');
-        localStorage.setItem('userData', JSON.stringify(userData));
+        sessionStorage.setItem('authToken', 'dummy-token');
+        sessionStorage.setItem('userData', JSON.stringify(userData));
         return true;
       }
       
@@ -159,8 +159,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = response.data;
         setUser(userData);
         setPendingOtpEmail(null); // Clear pending OTP email
-        localStorage.setItem('authToken', 'dummy-token'); // In a real app, store actual JWT token
-        localStorage.setItem('userData', JSON.stringify(userData));
+        sessionStorage.setItem('authToken', 'dummy-token'); // In a real app, store actual JWT token
+        sessionStorage.setItem('userData', JSON.stringify(userData));
         return true;
       }
       return false;
@@ -175,8 +175,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     setPendingOtpEmail(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('userData');
   };
 
   const clearPendingOtp = () => {

@@ -4,7 +4,8 @@ import {
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardDescription
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,10 @@ import FeedbackTypeChart from '@/components/FeedbackTypeChart';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDepartmentTranslationKey } from '@/lib/departmentTranslations';
 import axios from 'axios';
+import SentimentPieChart from '@/components/SentimentPieChart';
+import FeedbackTypeBarChart from '@/components/FeedbackTypeBarChart';
+import { clusterUserFeedback, UserFeedbackCluster } from '@/utils/feedbackCategorizer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface Department {
   id: number;
@@ -113,8 +118,21 @@ const DepartmentPage: React.FC = () => {
   const [isRangePopoverOpen, setIsRangePopoverOpen] = useState(false);
   const [feedbackSummary, setFeedbackSummary] = useState<any>(null);
   const [analyticsChartData, setAnalyticsChartData] = useState<any[]>([]);
+  const [selectedCluster, setSelectedCluster] = useState<UserFeedbackCluster | null>(null);
+  const [clusterCategoryFilter, setClusterCategoryFilter] = useState<'all' | 'positive' | 'negative' | 'neutral'>('all');
+  const [clusterPatientIdFilter, setClusterPatientIdFilter] = useState('');
 
   const BASE_URL = "http://localhost:8089/api";
+
+    // Dummy data for charts and clusters (replace with real data as needed)
+    const sentimentData = { positive: 13, negative: 13, neutral: 0 };
+    const feedbackTypeData = { compliments: 13, suggestions: 0, complaints: 13 };
+    const patientClusters = [
+      { id: 'Patient-152', category: 'Neutral', lastFeedback: '6/19/2025' },
+      { id: 'Patient-103', category: 'Negative', lastFeedback: '6/18/2025' },
+      { id: 'Patient-64', category: 'Neutral', lastFeedback: '6/18/2025' },
+      { id: 'Patient-61', category: 'Negative', lastFeedback: '6/18/2025' },
+    ];
 
   useEffect(() => {
     if (departmentId) {
@@ -535,6 +553,30 @@ const DepartmentPage: React.FC = () => {
     });
   };
 
+  const clusters = useMemo(() => clusterUserFeedback(feedbacks), [feedbacks]);
+  const filteredClusters = useMemo(() => {
+    return clusters.filter(cluster => {
+      const categoryMatch = clusterCategoryFilter === 'all' || cluster.overallCategory.overall === clusterCategoryFilter;
+      const patientIdMatch = clusterPatientIdFilter === '' || String(cluster.patientId).includes(clusterPatientIdFilter);
+      return categoryMatch && patientIdMatch;
+    });
+  }, [clusters, clusterCategoryFilter, clusterPatientIdFilter]);
+
+  // For analytics: count feedbacks by category
+  const analyticsCategoryData = useMemo(() => {
+    const counts = { COMPLAINT: 0, SUGGESTION: 0, COMPLIMENT: 0 };
+    feedbacks.forEach(fb => {
+      if (fb.category === 'COMPLAINT') counts.COMPLAINT++;
+      else if (fb.category === 'SUGGESTION') counts.SUGGESTION++;
+      else if (fb.category === 'COMPLIMENT') counts.COMPLIMENT++;
+    });
+    return [
+      { category: 'Complaint', count: counts.COMPLAINT },
+      { category: 'Suggestion', count: counts.SUGGESTION },
+      { category: 'Compliment', count: counts.COMPLIMENT },
+    ];
+  }, [feedbacks]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -595,6 +637,7 @@ const DepartmentPage: React.FC = () => {
           <TabsTrigger value="feedbacks">{t('feedbacks')}</TabsTrigger>
           <TabsTrigger value="feedbackForm">{t('feedbackForm')}</TabsTrigger>
           <TabsTrigger value="analytics">{t('analyticsTab')}</TabsTrigger>
+          <TabsTrigger value="clusters">Feedback Clusters</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -1155,6 +1198,84 @@ const DepartmentPage: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        <TabsContent value="clusters" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Feedback Analysis</CardTitle>
+              <CardDescription>Clustered feedback by patient</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Category</label>
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={clusterCategoryFilter}
+                    onChange={e => setClusterCategoryFilter(e.target.value as any)}
+                  >
+                    <option value="all">All</option>
+                    <option value="positive">Positive</option>
+                    <option value="negative">Negative</option>
+                    <option value="neutral">Neutral</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Patient ID</label>
+                  <input
+                    className="border rounded px-2 py-1"
+                    type="text"
+                    placeholder="Search patient ID..."
+                    value={clusterPatientIdFilter}
+                    onChange={e => setClusterPatientIdFilter(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Feedback</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredClusters.map((cluster) => (
+                      <tr key={cluster.patientId}>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium">patient-{cluster.patientId}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${cluster.overallCategory.overall === 'negative' ? 'bg-red-100 text-red-700' : cluster.overallCategory.overall === 'neutral' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{cluster.overallCategory.overall.charAt(0).toUpperCase() + cluster.overallCategory.overall.slice(1)}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{cluster.lastFeedbackDate ? new Date(cluster.lastFeedbackDate).toLocaleDateString() : '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Button size="sm" variant="outline" onClick={() => setSelectedCluster(cluster)}>View Details</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+          <Dialog open={!!selectedCluster} onOpenChange={() => setSelectedCluster(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Feedback Details for Patient-{selectedCluster?.patientId}</DialogTitle>
+                <DialogDescription>All questions and answers submitted by this patient.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {selectedCluster?.feedbacks.map((fb) => (
+                  <div key={fb.id} className="border-b pb-2 mb-2">
+                    <div className="font-semibold">Q: {fb.question}</div>
+                    <div className="ml-2">A: {fb.questionAnswer}</div>
+                    <div className="text-xs text-gray-500">{new Date(fb.createdAt).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>

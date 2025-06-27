@@ -3,7 +3,7 @@
  * 
  * This component handles user authentication through a login form.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -35,7 +35,7 @@ const LoginPage = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loginType, setLoginType] = useState<'username' | 'email'>('username');
@@ -47,6 +47,12 @@ const LoginPage = () => {
       password: '',
     },
   });
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/department-dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const onSubmitLogin = async (data: LoginFormValues) => {
     try {
